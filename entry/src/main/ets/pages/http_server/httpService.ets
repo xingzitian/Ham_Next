@@ -23,9 +23,19 @@ interface res_user {
   message:string,
   data:user_data
 }
+
+interface res_user_id{
+  success:boolean,
+  message:string,
+  data:res_user_date_user
+}
 //这个是用户注册登录返回的data具体内容
 interface user_data {
   token:string,
+  userId:number
+}
+
+interface res_user_date_user{
   user:user
 }
 //暂时没有用上的用户模型
@@ -94,7 +104,7 @@ interface log_delete_res{
 }
 
 class http_id {
-  static async httpRequest(username: string, phone: string ,email:string,pass_num:string,mode:number ,token?:string): Promise<res_user> {
+  static async httpRequest(mode:number ,phone?: string ,pass_num?:string,username?: string, email?:string): Promise<res_user> {
     if (mode === 1) {
       //注册
       mode_url = 'users/register'
@@ -119,13 +129,6 @@ class http_id {
           "password": pass_num       // 字符串，必填
         }
       }
-    } else if (mode === 3) {
-      //获取当前用户信息
-      mode_url = 'users/men'
-      HttpRequestOptions = {
-        method: http.RequestMethod.GET,
-        header: { 'Content-Type': 'application/json','Authorization': 'Bearer ' + token},
-      }
     }
     return new Promise((resolve, reject) => {
       let httpRequest = http.createHttp();
@@ -135,17 +138,61 @@ class http_id {
         (err: BusinessError, data: http.HttpResponse) => {
           if (!err) {
             hilog.info(0x0001, "http_login：", "http_login:%{public}i", data.responseCode);
-            const responseObj: Array<res_user> = JSON.parse(data.result + '');
+            const responseObj: object = JSON.parse(data.result + '');
             promptAction.showToast({
               message: responseObj["message"]
             });
 
-            if (data.responseCode === 200) {
+            if (data.responseCode === 200 ||data.responseCode === 201) {
               const res: res_user = JSON.parse(data.result + '');
               resolve(res);
             } else {
               reject("error:出现未知错误")
               hilog.error(0x0001, "http_login：", "出现未知错误");
+            }
+            // 当该请求使用完毕时，开发者务必调用 destroy 方法主动销毁该 JavaScript Object。
+            httpRequest.destroy();
+
+          } else {
+            console.info('error:' + JSON.stringify(err));
+            // 当该请求使用完毕时，开发者务必调用 destroy 方法主动销毁该 JavaScript Object。
+            httpRequest.destroy();
+            reject(err);
+          }
+        }
+      );
+    });
+  }
+}
+
+class http_get_id {
+  static async httpRequest(token:string): Promise<res_user_id> {
+      //获取当前用户信息
+      mode_url = 'users/me'
+      HttpRequestOptions = {
+        method: http.RequestMethod.GET,
+        header: { 'Content-Type': 'application/json','Authorization': 'Bearer ' + token},
+      }
+
+    return new Promise((resolve, reject) => {
+      let httpRequest = http.createHttp();
+      httpRequest.request(
+        url_main + mode_url,
+        HttpRequestOptions,
+        (err: BusinessError, data: http.HttpResponse) => {
+          if (!err) {
+            hilog.info(0x0001, "http_login_get_id：", "http_login_get_id:%{public}i", data.responseCode);
+            const responseObj: object = JSON.parse(data.result + '');
+            promptAction.showToast({
+              message: responseObj["message"]
+            });
+
+            if (data.responseCode === 200 ) {
+              const res: res_user_id = JSON.parse(data.result + '');
+              resolve(res);
+            } else {
+              reject("error:出现未知错误")
+              hilog.error(0x0001, "http_login_get_id：", "出现未知错误");
             }
             // 当该请求使用完毕时，开发者务必调用 destroy 方法主动销毁该 JavaScript Object。
             httpRequest.destroy();
@@ -265,7 +312,7 @@ class http_list_logs {
 
 class http_once_logs {
   //这个都是查询或者添加相关的路由
-  static async httpRequest( log_id:string, token: string): Promise<Array<res_once_log>> {
+  static async httpRequest( log_id:string, token: string): Promise<res_once_log> {
     //获取日志列表
     mode_url = 'logs?'+log_id
     HttpRequestOptions = { method: http.RequestMethod.GET,
@@ -293,7 +340,7 @@ class http_once_logs {
             }
             if (data.responseCode === 200) {
               console.log('http_once_logs：' + data.result);
-              const responseObj: Array<res_once_log> = JSON.parse(data.result + '');
+              const responseObj: res_once_log = JSON.parse(data.result + '');
               resolve(responseObj);
             }
             httpRequest.destroy();
@@ -356,6 +403,6 @@ class http_logs_manage {
 }
 
 export {
-  Request,res_user,user_data,user,tx_log,rx_log,log_message,res_add_log,res_log_list_data,res_log_list,res_once_log,log_delete_res,
-  http_id,http_log_add,http_list_logs,http_once_logs,http_logs_manage
+  Request,res_user,user_data,res_user_id,user,tx_log,rx_log,log_message,res_add_log,res_log_list_data,res_log_list,res_once_log,log_delete_res,
+  http_id,http_get_id,http_log_add,http_list_logs,http_once_logs,http_logs_manage
 };

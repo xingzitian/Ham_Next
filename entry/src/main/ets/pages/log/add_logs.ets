@@ -7,7 +7,7 @@ import { common } from '@kit.AbilityKit';
 import { LoadingDialog } from '@kit.ArkUI'
 import { PromptAction } from '@kit.ArkUI';
 
-//单文件项目标识
+//单文件项目标识add_logs
 //完成
 
 
@@ -87,7 +87,7 @@ export struct add_log {
                     const year = date.getFullYear();
                     const month = ("0" + (date.getMonth() + 1)).slice(-2); // 月份从0开始，需要加1并补0
                     const day = ("0" + date.getDate()).slice(-2); // 日期补0
-                    console.log("选择的时间："+year+"-"+month+"-"+day)
+                    console.log("获取的时间："+year+"-"+month+"-"+day)
 
                     this.log_date=String(year)+"-"+String(month)+"-"+String(day)
                   }

@@ -38,8 +38,10 @@ export struct team_info {
 
   async http_get_log_info(log_id: string,token:string) {
     try {
-      const response: Array<res_once_log> = await http_once_logs.httpRequest(log_id,token);
-      console.log("team_info_get_resoly" + response[0].message)
+      const response: res_once_log = await http_once_logs.httpRequest(log_id,token);
+      console.log("http_once_logs" + response.message)
+
+
 
       // this.petalMapWant.parameters = {
       //   linkSource: 'com.dada.xingzitian',
