@@ -1,11 +1,12 @@
 import {add_log} from './log/add_logs'
 import {login} from './user/login'
 import {register} from './user/register'
+import {log_search} from './log/search_log_list'
 
 import { PromptAction } from '@kit.ArkUI';
 //初始化持久存储
 PersistentStorage.persistProp('token', '');
-PersistentStorage.persistProp('username', '');
+PersistentStorage.persistProp('callsign', '');
 
 @Entry
 @Component
@@ -15,7 +16,7 @@ struct Index {
   private promptAction: PromptAction = this.uiContext.getPromptAction();
   @Provide('index') index: NavPathStack = new NavPathStack()
   @StorageLink('token') token: string = ''
-  @StorageLink('username') username: string = ''
+  @StorageLink('callsign') callsign: string = '';
   @Builder
   PageMap(name: string) {
     if (name === "add_log") {
@@ -24,6 +25,8 @@ struct Index {
       register()
     } else if (name === "login") {
       login()
+    }else if (name === "log_search") {
+      log_search()
     }
   }
   build() {
@@ -50,6 +53,8 @@ struct Index {
               Row(){
                 Text("当前用户呼号：")
                   .fontSize(20)
+                Text(this.callsign)
+                  .fontSize(20)
 
               }
               Row({ space: 35 }){
@@ -61,7 +66,7 @@ struct Index {
                 Image($r('app.media.some_mark'))
                   .width(160)
                   .onClick(()=>{
-                    this.index.pushPath({name:'add_log'})
+                    this.index.pushPath({name:'log_search'})
                   })
               }
             }
@@ -93,10 +98,9 @@ struct Index {
                   }
                   .alignItems(HorizontalAlign.Start)
                 } else {
-                  Text(this.username)
-                    .fontSize(20)
+                  Text(this.callsign)
+                    .fontSize(30)
                     .margin({left:10})
-                    .fontSize(20)
                 }
               }
               .onClick(() => {
@@ -143,7 +147,7 @@ struct Index {
                     .margin(15)
                 }
                 .onClick(() => {
-                  this.username = '';
+                  this.callsign = '';
                   this.token = '';
                   this.promptAction.showToast({
                     message: '退出成功！'

@@ -1,6 +1,5 @@
-import { Request,res_user,user_data,user,tx_log,rx_log,log_message,res_add_log,res_log_list_data,res_log_list,res_once_log,log_delete_res,
-  http_id,http_log_add,http_list_logs,http_once_logs,http_logs_manage } from '../http_server/httpService';
-import { promptAction } from '@kit.ArkUI';
+import { res_user,user_data,tx_log,rx_log,res_add_log,res_log_list,res_once_log,
+  http_id,http_log_add,http_list_logs,http_once_logs, } from '../http_server/httpService';
 import { sceneMap } from '@kit.MapKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { common } from '@kit.AbilityKit';
@@ -31,31 +30,51 @@ export struct add_log {
       content: '正在提交中',
     }),
   })
+
+  private fruits: TextCascadePickerRangeContent[] = [
+    {
+      text: '语音模式',
+      children: [{ text: 'SSB' },{ text: 'FM' },{ text: 'AM' },{ text: 'FSK' }]
+    },    {
+    text: 'CW'
+  },    {
+    text: '数字模式',
+    children: [{ text: 'FT8' },{ text: 'RTTY' },{ text: 'APRS' }]
+  },
+    {
+      text: '图像模式',
+      children: [{ text: 'SSTV' }]
+    },
+  ];
+  private select : number  = 0;
+
   @Consume('index') index: NavPathStack;
-  @State log_date:string='';
-  @State log_time:string='';
+  @State timestamp:string='';
   @State frequency:number=0;
-  @State other_username:string='';
-  @State rx_report:number=0;
-  @State tx_report:number=0;
-  @State summary:string='';
+  @State contactCallsign:string='';
+  @State receivedReport:string='';
+  @State sentReport:string='';
+  @State notes:string='';
+  @State mode :string=''
+
+  @State mode_0:string=''
 
   @State hours:string='';
   @State minute:string='';
-  @State second:string='';
 
   @StorageProp('token') token: string = '';
+
 
   async http_add_log_request( token: string) {
     try {
       const tx_log: tx_log = {
-        log_date: this.log_date,
-        log_time: this.hours+":"+this.minute+":"+this.second,
+        contactCallsign: this.contactCallsign,
+        timestamp: this.timestamp, // ISO 8601 格式的日期字符串
         frequency: this.frequency,
-        other_username: this.other_username,
-        rx_report: this.rx_report,
-        tx_report: this.tx_report,
-        summary: this.summary
+        mode: this.mode,
+        sentReport: this.sentReport,
+        receivedReport:this.receivedReport,
+        notes: this.notes // 可选字段
       };
       console.log(String(tx_log))
       const response =
@@ -68,7 +87,6 @@ export struct add_log {
           this.index.pop()
         }
       }, 500);
-
     } catch (error) {
     }
   }
@@ -76,95 +94,64 @@ export struct add_log {
   build() {
     NavDestination() {
         Column({ space: 25 }) {
-          Row() {
-            Text('选择日期：')
-              .fontSize(18)
-            Button("选择日期")
-              .onClick(()=>{
-                console.info("CalendarDialog.show")
-                CalendarPickerDialog.show({
-                  onAccept:(date:Date)=>{
+          Row(){
+            Button('选择日期')
+              .width('40%')
+              .margin(15)
+              .onClick(() => {
+                this.getUIContext().showDatePickerDialog({
+                  start: new Date("2000-1-1"),
+                  end: new Date("2100-12-31"),
+                  showTime: true,
+                  useMilitaryTime:true,
+                  onDateAccept: (date: Date) => {
                     const year = date.getFullYear();
                     const month = ("0" + (date.getMonth() + 1)).slice(-2); // 月份从0开始，需要加1并补0
                     const day = ("0" + date.getDate()).slice(-2); // 日期补0
                     console.log("获取的时间："+year+"-"+month+"-"+day)
+                    console.log("获取的时间1："+date.getTime())
+                    console.log("获取的时间2："+date.toISOString())
+                    console.log("获取的时间3："+date.toUTCString())
+                    this.timestamp=date.toISOString()
 
-                    this.log_date=String(year)+"-"+String(month)+"-"+String(day)
+                  },
+                });
+              })
+
+            Button('模式选择')
+              .margin(15)
+              .width('40%')
+              .onClick(() => {
+                this.getUIContext().showTextPickerDialog({
+                  range: this.fruits,
+                  selected: this.select,
+                  onAccept: (value: TextPickerResult) => {
+                    this.select = value.index as number
+                    console.log("选择的模式："+value.value)
+                    this.mode_0=value.value[0]
+                    this.mode=value.value[1]
                   }
-                }
-                )
+                });
               })
           }
-
-          Row() {
-            Text('已经选择的日期：')
-              .fontSize(18)
-            Text(this.log_date)
-              .fontSize(18)
-          }
+          .width('100%')
 
           Column(){
-            Text('详细时间：(24小时制)')
+            Text('已经选择的日期(UTC时间)：')
               .fontSize(18)
-            Row(){
-              TextInput({ placeholder: '时(24小时制)' })
-                .width("20%")
-                .type(InputType.Number)
-                .onChange((hours_get: string) => {
-                  const hours = ("0" + hours_get).slice(-2);
-                  if (Number(hours)>24 || Number(hours)<0){
-                    this.promptAction.showToast({
-                      message: "时间越界",
-                      duration: 2000
-                    })
-                  }else{
-                    this.hours=hours
-                  }
-                  console.log("获取到的时："+this.hours)
-                });
-
-              Text('时')
+            if(this.timestamp!==''){
+              Text(this.timestamp)
                 .fontSize(18)
+            }
 
-              TextInput({ placeholder: '分' })
-                .width("20%")
-                .type(InputType.Number)
-                .onChange((minute_get: string) => {
-                  const minute = ("0" + minute_get).slice(-2);
-                  if (Number(minute)>60 || Number(minute)<0){
-                    this.promptAction.showToast({
-                      message: "时间越界",
-                      duration: 2000
-                    })
-                  }else{
-                    this.minute=minute
-                  }
-                  console.log("获取到的分："+this.minute)
-                });
-
-              Text('分')
-                .fontSize(18)
-
-              TextInput({ placeholder: '秒' })
-                .width("20%")
-                .type(InputType.Number)
-                .onChange((second_get: string) => {
-                  const second = ("0" + second_get).slice(-2);
-                  if (Number(second)>60 || Number(second)<0){
-                    this.promptAction.showToast({
-                      message: "时间越界",
-                      duration: 2000
-                    })
-                  }else{
-                    this.second=second
-                  }
-                  console.log("获取到的秒："+this.second)
-                });
-
-              Text('秒')
+            Text('已经选择的模式：')
+              .fontSize(18)
+            if(this.mode!==''){
+              Text(this.mode_0+":"+this.mode)
                 .fontSize(18)
             }
           }
+          .backgroundColor('#ffe5e5ea')
 
           Row() {
             Text('频率：')
@@ -184,8 +171,8 @@ export struct add_log {
               .fontSize(18)
             TextInput({ placeholder: '请输入对方呼号' })
               .type(InputType.Normal)
-              .onChange((other_username: string) => {
-                this.other_username=other_username
+              .onChange((contactCallsign: string) => {
+                this.contactCallsign=contactCallsign
               });
           }
           .width('50%')
@@ -195,29 +182,28 @@ export struct add_log {
               Text('信号报告：')
                 .fontSize(18)
             }
-            Column(){
-              TextInput({ placeholder: '收方信号报告' })
+              TextInput({ placeholder: '收方' })
+                .width('30%')
                 .type(InputType.Number)
-                .onChange((rx_report: string) => {
-                  this.rx_report=Number(rx_report)
+                .onChange((receivedReport: string) => {
+                  this.receivedReport=receivedReport
                 });
 
-              TextInput({ placeholder: '发方信号报告' })
+              TextInput({ placeholder: '发方' })
+                .width('30%')
                 .type(InputType.Number)
-                .onChange((tx_report: string) => {
-                  this.tx_report=Number(tx_report)
+                .onChange((sentReport: string) => {
+                  this.sentReport=sentReport
                 });
-            }
-
           }
-          .width('50%')
+          .width('100%')
 
           Row() {
             Text('备注：')
               .fontSize(18)
             TextArea({ placeholder: '请输入备注' })
-              .onChange((summary: string) => {
-                this.summary=summary
+              .onChange((notes: string) => {
+                this.notes=notes
               });
           }
           .width('50%')
@@ -244,8 +230,6 @@ export struct add_log {
       }
       .margin({top:25})
       .alignItems(HorizontalAlign.Center)
-
-
 
           // Row() {
           //   Button('选择地点')

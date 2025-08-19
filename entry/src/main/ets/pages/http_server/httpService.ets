@@ -9,87 +9,81 @@ import { data } from '@kit.TelephonyKit';
 //2.reject是返回失败的方法
 //3.初始状态是pending，等待中，进行异步的操作
 
-let url_main: string = 'http://192.168.3.132:3000/api/';
+let url_main: string = 'http://192.168.3.132:8000/api/';
 let HttpRequestOptions: http.HttpRequestOptions = {};
 let mode_url = '';
-//通用的返回格式
-interface Request{
-  success: boolean
-  message: string
-}
+
 //对于用户注册和登录的时候返回的格式
 interface res_user {
   success:boolean,
   message:string,
-  data:user_data
+  data:data_user,
 }
 
-interface res_user_id{
-  success:boolean,
-  message:string,
-  data:res_user_date_user
+interface data_user{
+  user:user_data,
+  token:string
 }
+
 //这个是用户注册登录返回的data具体内容
 interface user_data {
-  token:string,
-  userId:number
+  id: number,
+  callsign: string,
+  email:string,
+
 }
 
-interface res_user_date_user{
-  user:user
-}
-//暂时没有用上的用户模型
-interface user {
-  user_id:number,
-  username:string,
-  phone:string,
-  email:string,
-  is_verified:number
-}
 //发送日志记录的时候的模板
 interface tx_log {
-  log_date: string,
-  log_time: string,
+  contactCallsign: string,
+  timestamp: string, // ISO 8601 格式的日期字符串
   frequency: number,
-  other_username: string,
-  rx_report: number,
-  tx_report: number,
-  summary: string
+  mode: string,
+  sentReport: string,
+  receivedReport: string,
+  notes: string // 可选字段
 }
 //接受日志记录的时候的模板
 interface rx_log {
-  log_id: number,
-  log_date: string,
-  log_time: string,
+  id: number,
+  contactCallsign: string,
+  timestamp: string,
   frequency: number,
-  other_username: string,
-  rx_report: number,
-  tx_report: number,
-  summary: string,
-  user_id: number
+  mode: string,
+  sentReport:string,
+  receivedReport: string,
+  notes: string,
+  user_id: number,
+  createdAt: string,
+  updatedAt:string
 }
-//这个是用获取日志返回的data具体内容
-interface log_message{
-  logId:number
-}
+//这个是用获取日志返回结构体
 
+//这个是添加log的响应
 interface res_add_log {
   success:boolean,
   message:string,
-  data:log_message
+  data:rx_log
 }
-//这个是用获取日志列表返回的data具体内容
-interface res_log_list_data{
-  total: number,
-  pages: number,
+//这个是用获取日志列表返回的分页信息
+interface pagination{
   currentPage: number,
-  logs:rx_log[]
+  totalPages: number,
+  totalCount: number,
+  hasNext: boolean,
+  hasPrev: boolean
 }
+
+interface log_list{
+  logs:rx_log[],
+  pagination:pagination
+}
+
 //这个是用获取日志列表结构
 interface res_log_list{
   success:boolean,
   message:string,
-  data:res_log_list_data
+  data:log_list
 }
 
 interface res_once_log{
@@ -97,14 +91,14 @@ interface res_once_log{
   message:string,
   data:rx_log
 }
-
-interface log_delete_res{
+//通用的返回格式
+interface message{
   success: boolean,
   message: string
 }
 
 class http_id {
-  static async httpRequest(mode:number ,phone?: string ,pass_num?:string,username?: string, email?:string): Promise<res_user> {
+  static async httpRequest(mode:number ,password:string,callsign: string, email?:string): Promise<res_user> {
     if (mode === 1) {
       //注册
       mode_url = 'users/register'
@@ -112,10 +106,9 @@ class http_id {
         method: http.RequestMethod.POST,
         header: { 'Content-Type': 'application/json' },
         extraData: {
-          "username": username,    // 字符串，3-50字符，必填
-          "phone": phone,    // 字符串，有效的手机号，必填
-          "email": email, // 字符串，有效的邮箱格式，可选
-          "password": pass_num       // 字符串，至少6位，必填
+          "callsign": callsign,
+          "password": password,
+          "email":email
         },
       }
     } else if (mode === 2) {
@@ -125,8 +118,8 @@ class http_id {
         method: http.RequestMethod.POST,
         header: { 'Content-Type': 'application/json'},
         extraData: {
-          "phone": phone,    // 字符串，有效的手机号，必填
-          "password": pass_num       // 字符串，必填
+          "callsign": callsign,
+          "password": password
         }
       }
     }
@@ -165,50 +158,6 @@ class http_id {
   }
 }
 
-class http_get_id {
-  static async httpRequest(token:string): Promise<res_user_id> {
-      //获取当前用户信息
-      mode_url = 'users/me'
-      HttpRequestOptions = {
-        method: http.RequestMethod.GET,
-        header: { 'Content-Type': 'application/json','Authorization': 'Bearer ' + token},
-      }
-
-    return new Promise((resolve, reject) => {
-      let httpRequest = http.createHttp();
-      httpRequest.request(
-        url_main + mode_url,
-        HttpRequestOptions,
-        (err: BusinessError, data: http.HttpResponse) => {
-          if (!err) {
-            hilog.info(0x0001, "http_login_get_id：", "http_login_get_id:%{public}i", data.responseCode);
-            const responseObj: object = JSON.parse(data.result + '');
-            promptAction.showToast({
-              message: responseObj["message"]
-            });
-
-            if (data.responseCode === 200 ) {
-              const res: res_user_id = JSON.parse(data.result + '');
-              resolve(res);
-            } else {
-              reject("error:出现未知错误")
-              hilog.error(0x0001, "http_login_get_id：", "出现未知错误");
-            }
-            // 当该请求使用完毕时，开发者务必调用 destroy 方法主动销毁该 JavaScript Object。
-            httpRequest.destroy();
-
-          } else {
-            console.info('error:' + JSON.stringify(err));
-            // 当该请求使用完毕时，开发者务必调用 destroy 方法主动销毁该 JavaScript Object。
-            httpRequest.destroy();
-            reject(err);
-          }
-        }
-      );
-    });
-  }
-}
-
 class http_log_add {
   static async httpRequest(tx:tx_log ,token: string): Promise<res_add_log> {
       //创建队伍
@@ -218,13 +167,13 @@ class http_log_add {
           'Authorization': 'Bearer ' + token
         },
         extraData: {
-          "log_date": tx.log_date,   // 字符串，日期格式YYYY-MM-DD，必填
-          "log_time": tx.log_time,     // 字符串，时间格式HH:MM:SS，必填
-          "frequency": tx.frequency,       // 数字，频率值，必填
-          "other_username": tx.other_username, // 字符串，对方用户名，必填
-          "rx_report": tx.rx_report,            // 整数，收方信号报告，必填
-          "tx_report": tx.tx_report,            // 整数，发方信号报告，必填
-          "summary": tx.summary    // 字符串，内容摘要，可选
+          contactCallsign: tx.contactCallsign,
+          timestamp: tx.timestamp, // ISO 8601 格式的日期字符串
+          frequency:tx.frequency,
+          mode: tx.mode,
+          sentReport: tx.sentReport,
+          receivedReport: tx.receivedReport,
+          notes: tx.notes // 可选字段
 
         }
       }
@@ -266,13 +215,21 @@ class http_log_add {
 
 class http_list_logs {
   //这个都是查询或者添加相关的路由
-  static async httpRequest( date:string,page:string,limit:string, token: string): Promise<Array<res_log_list>> {
+  static async httpRequest( date:string,page:number, token: string,other_username?:string,min_frequency?:number,max_frequency?:number): Promise<res_log_list> {
       //获取日志列表
-      mode_url = 'logs?'+"data="+date+"&"+"page="+page+"&"+"limit="+limit
-      HttpRequestOptions = { method: http.RequestMethod.GET,
+      mode_url = 'logs/list'
+      HttpRequestOptions = { method: http.RequestMethod.POST,
         header: { 'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + token
         },
+        extraData: {
+          "date": date,
+          "other_username": other_username,
+          "min_frequency": min_frequency,
+          "max_frequency": max_frequency,
+          "page": page,
+          "limit": 5
+        }
       }
 
     return new Promise((resolve, reject) => {
@@ -294,7 +251,7 @@ class http_list_logs {
             }
             if (data.responseCode === 200) {
               console.log('http_list_logs：' + data.result);
-              const responseObj: Array<res_log_list> = JSON.parse(data.result + '');
+              const responseObj: res_log_list = JSON.parse(data.result + '');
               resolve(responseObj);
             }
             httpRequest.destroy();
@@ -356,53 +313,8 @@ class http_once_logs {
   }
 }
 
-class http_logs_manage {
-  //这个都是查询或者添加相关的路由
-  static async httpRequest(log_id: string,token:string): Promise<Array<log_delete_res>> {
-      //删除队伍
-      mode_url = 'logs/' + log_id
-      HttpRequestOptions = { method: http.RequestMethod.DELETE,
-        header: { 'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token
-        },
-      }
-
-    return new Promise((resolve, reject) => {
-      let httpRequest = http.createHttp();
-      httpRequest.request(
-        url_main + mode_url,
-        HttpRequestOptions,
-        (err: BusinessError, data: http.HttpResponse) => {
-          if (!err) {
-            // data.header 为 HTTP 响应头，可根据业务需要进行解析
-            hilog.info(0x0001, "http_log_delete", "log_interface_httpcode:%{public}i", data.responseCode);
-            console.log(data.result as string)
-            const responseObj: object = JSON.parse(data.result + '');
-            if (data.responseCode !== 200) {
-              reject(responseObj["message"])
-              promptAction.showToast({
-                message: responseObj["message"]
-              });
-            }
-            if (data.responseCode === 200) {
-              console.log('http_log_delete' + data.result);
-              const responseObj: Array<log_delete_res> = JSON.parse(data.result + '');
-              resolve(responseObj);
-            }
-            httpRequest.destroy();
-          } else {
-            console.info('error:' + JSON.stringify(err));
-            // 当该请求使用完毕时，开发者务必调用 destroy 方法主动销毁该 JavaScript Object。
-            httpRequest.destroy();
-            reject(err);
-          }
-        }
-      );
-    });
-  }
-}
 
 export {
-  Request,res_user,user_data,res_user_id,user,tx_log,rx_log,log_message,res_add_log,res_log_list_data,res_log_list,res_once_log,log_delete_res,
-  http_id,http_get_id,http_log_add,http_list_logs,http_once_logs,http_logs_manage
+  res_user,user_data,tx_log,rx_log,res_add_log,res_log_list,res_once_log,
+  http_id,http_log_add,http_list_logs,http_once_logs
 };

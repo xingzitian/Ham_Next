@@ -1,5 +1,5 @@
-import { Request,res_user,user_data,user,tx_log,rx_log,log_message,res_add_log,res_log_list_data,res_log_list,res_once_log,log_delete_res,
-  http_id,http_log_add,http_list_logs,http_once_logs,http_logs_manage } from '../http_server/httpService';
+import { res_user,user_data,tx_log,rx_log,res_add_log,res_log_list,res_once_log,
+  http_id,http_log_add,http_list_logs,http_once_logs, } from '../http_server/httpService';
 
 import { LoadingDialog } from '@kit.ArkUI'
 import { PromptAction } from '@kit.ArkUI';
@@ -19,17 +19,14 @@ export struct register {
   })
   @Consume('index') index: NavPathStack;
 
-  @State phone:string='';
-  @State email:string='';
-  @State pass_num:string='';
-
-
+  @State password:string='';
+  @State email:string=''
   @StorageLink('token') token: string = '';
-  @StorageLink('username') username: string = '';
+  @StorageLink('callsign') callsign: string = '';
   async http_register_request(email?:string) {
     try {
       const response =
-        await http_id.httpRequest(1,this.phone,this.pass_num,this.username,email);
+        await http_id.httpRequest(1,this.password,this.callsign,this.email);
 
       setTimeout(() => {
         this.dialogControllerProgress.close()
@@ -51,28 +48,8 @@ export struct register {
             .fontSize(18)
           TextInput({ placeholder: '请输入呼号' })
             .type(InputType.Normal)
-            .onChange((username: string) => {
-              this.username = username;
-            });
-        }
-        .width('50%')
-        Row() {
-          Text('请输入手机号：')
-            .fontSize(18)
-          TextInput({ placeholder: '请输入手机号' })
-            .type(InputType.Number)
-            .onChange((phone: string) => {
-              this.phone = phone;
-            });
-        }
-        .width('50%')
-        Row() {
-          Text('请输入邮箱（可选）：')
-            .fontSize(18)
-          TextInput({ placeholder: '请输入邮箱' })
-            .type(InputType.Email)
-            .onChange((email: string) => {
-              this.email = email;
+            .onChange((callsign: string) => {
+              this.callsign = callsign;
             });
         }
         .width('50%')
@@ -81,12 +58,21 @@ export struct register {
             .fontSize(18)
           TextInput({ placeholder: '请输入密码' })
             .type(InputType.Password)
-            .onChange((pass_num: string) => {
-              this.pass_num = pass_num;
+            .onChange((password: string) => {
+              this.password = password;
             });
         }
         .width('50%')
-
+        Row() {
+          Text('请输入邮箱：')
+            .fontSize(18)
+          TextInput({ placeholder: '请输入邮箱' })
+            .type(InputType.Email)
+            .onChange((email: string) => {
+              this.email = email;
+            });
+        }
+        .width('50%')
       }
       .alignItems(HorizontalAlign.Start)
       .width('90%')

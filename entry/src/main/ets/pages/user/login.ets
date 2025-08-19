@@ -1,6 +1,5 @@
-import { Request,res_user,user_data,user,tx_log,rx_log,log_message,res_add_log,res_log_list_data,res_log_list,res_once_log,log_delete_res,
-  http_id,http_get_id,res_user_id,http_log_add,http_list_logs,http_once_logs,http_logs_manage } from '../http_server/httpService';
-
+import { res_user,user_data,tx_log,rx_log,res_add_log,res_log_list,res_once_log,
+  http_id,http_log_add,http_list_logs,http_once_logs, } from '../http_server/httpService';
 import { LoadingDialog } from '@kit.ArkUI'
 import { PromptAction } from '@kit.ArkUI';
 
@@ -19,38 +18,21 @@ export struct login {
     }),
   })
   @Consume('index') index: NavPathStack;
-  @State phone:string='';
-  @State pass_num:string='';
 
-
+  @State password:string='';
   @StorageLink('token') token: string = '';
-  @StorageLink('username') username: string = '';
+  @StorageLink('callsign') callsign: string = '';
   async http_login_request() {
     try {
       const response =
-        await http_id.httpRequest(2,this.phone,this.pass_num);
-
-      setTimeout(() => {
-        if (response.success === true) {
-          this.token=response.data.token
-          this.http_get_username_request(this.token)
-        }
-      }, 500);
-
-    } catch (error) {
-    }
-  }
-
-  async http_get_username_request(token:string) {
-    try {
-      const response =
-        await http_get_id.httpRequest(token);
+        await http_id.httpRequest(2,this.password,this.callsign);
 
       setTimeout(() => {
         this.dialogControllerProgress.close()
         if (response.success === true) {
-          console.log("获取到的呼号："+response.data.user.username)
-          this.username=response.data.user.username
+          this.token=response.data.token
+          this.callsign=response.data.user.callsign
+          console.log("获取到的呼号："+this.callsign)
           this.index.pop()
         }
       }, 500);
@@ -64,12 +46,12 @@ export struct login {
       Column({ space: 25 }) {
 
         Row() {
-          Text('请输入手机号：')
+          Text('请输入呼号：')
             .fontSize(18)
-          TextInput({ placeholder: '请输入手机号' })
-            .type(InputType.Number)
-            .onChange((phone: string) => {
-              this.phone = phone;
+          TextInput({ placeholder: '请输入呼号' })
+            .type(InputType.Normal)
+            .onChange((callsign: string) => {
+              this.callsign = callsign;
             });
         }
         .width('50%')
@@ -79,8 +61,8 @@ export struct login {
             .fontSize(18)
           TextInput({ placeholder: '请输入密码' })
             .type(InputType.Password)
-            .onChange((pass_num: string) => {
-              this.pass_num = pass_num;
+            .onChange((password: string) => {
+              this.password = password;
             });
         }
         .width('50%')
