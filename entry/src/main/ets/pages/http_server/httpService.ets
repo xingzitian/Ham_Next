@@ -73,11 +73,12 @@ interface pagination{
   hasNext: boolean,
   hasPrev: boolean
 }
-
+//这个是返回日志列表的data内容
 interface log_list{
   logs:rx_log[],
   pagination:pagination
 }
+
 
 //这个是用获取日志列表结构
 interface res_log_list{
@@ -89,7 +90,7 @@ interface res_log_list{
 interface res_once_log{
   success:boolean,
   message:string,
-  data:rx_log
+  data: rx_log
 }
 //通用的返回格式
 interface message{
@@ -167,13 +168,13 @@ class http_log_add {
           'Authorization': 'Bearer ' + token
         },
         extraData: {
-          contactCallsign: tx.contactCallsign,
-          timestamp: tx.timestamp, // ISO 8601 格式的日期字符串
-          frequency:tx.frequency,
-          mode: tx.mode,
-          sentReport: tx.sentReport,
-          receivedReport: tx.receivedReport,
-          notes: tx.notes // 可选字段
+          "contactCallsign": tx.contactCallsign,
+          "timestamp": tx.timestamp, // ISO 8601 格式的日期字符串
+          "frequency":tx.frequency,
+          "mode": tx.mode,
+          "sentReport": tx.sentReport,
+          "receivedReport": tx.receivedReport,
+          "notes": tx.notes // 可选字段
 
         }
       }
@@ -188,11 +189,11 @@ class http_log_add {
             // data.header 为 HTTP 响应头，可根据业务需要进行解析
             hilog.info(0x0001, "http_add_log：", "log_interface_httpcode:%{public}i", data.responseCode);
             console.log(data.result as string)
-            const responseObj: object = JSON.parse(data.result + '');
+            const responseObj: res_add_log = JSON.parse(data.result + '');
             if (data.responseCode !== 201) {
-              reject(responseObj["message"])
+              reject(responseObj.message)
               promptAction.showToast({
-                message: responseObj["message"]
+                message:responseObj.message
               });
             }
             if (data.responseCode === 201) {
@@ -215,20 +216,18 @@ class http_log_add {
 
 class http_list_logs {
   //这个都是查询或者添加相关的路由
-  static async httpRequest( date:string,page:number, token: string,other_username?:string,min_frequency?:number,max_frequency?:number): Promise<res_log_list> {
+  static async httpRequest( use:number,page:number, token: string,date?:string,mode?:string,contactCallsign?:string,minFrequency?:number,maxFrequency?:number): Promise<res_log_list> {
       //获取日志列表
-      mode_url = 'logs/list'
-      HttpRequestOptions = { method: http.RequestMethod.POST,
-        header: { 'Content-Type': 'application/json',
+    if(use===0){
+      mode_url = 'logs?'+'page='+page+'&limit=5'
+    }
+    else{
+      mode_url = 'logs?'+ 'date='+date+'&contactCallsign='+contactCallsign+'&mode='+mode+'&minFrequency='+minFrequency+'&maxFrequency='+maxFrequency+'&page='+page+'&limit=5'
+    }
+      HttpRequestOptions = { method: http.RequestMethod.GET,
+        header: {
+        'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + token
-        },
-        extraData: {
-          "date": date,
-          "other_username": other_username,
-          "min_frequency": min_frequency,
-          "max_frequency": max_frequency,
-          "page": page,
-          "limit": 5
         }
       }
 
@@ -240,13 +239,13 @@ class http_list_logs {
         (err: BusinessError, data: http.HttpResponse) => {
           if (!err) {
             // data.header 为 HTTP 响应头，可根据业务需要进行解析
-            hilog.info(0x0001, "http_list_logs：", "teams_interface_httpcode:%{public}i", data.responseCode);
+            hilog.info(0x0001, "http_list_logs：", "http_list_logs_httpcode:%{public}i", data.responseCode);
             console.log(data.result as string)
-            const responseObj: object = JSON.parse(data.result + '');
+            const responseObj: res_log_list = JSON.parse(data.result + '');
             if (data.responseCode !== 200) {
-              reject(responseObj["message"])
+              reject(responseObj.message)
               promptAction.showToast({
-                message: responseObj["message"]
+                message: responseObj.message
               });
             }
             if (data.responseCode === 200) {
@@ -271,7 +270,7 @@ class http_once_logs {
   //这个都是查询或者添加相关的路由
   static async httpRequest( log_id:string, token: string): Promise<res_once_log> {
     //获取日志列表
-    mode_url = 'logs?'+log_id
+    mode_url = 'logs/'+log_id
     HttpRequestOptions = { method: http.RequestMethod.GET,
       header: { 'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + token
@@ -288,11 +287,11 @@ class http_once_logs {
             // data.header 为 HTTP 响应头，可根据业务需要进行解析
             hilog.info(0x0001, "http_once_logs：", "teams_interface_httpcode:%{public}i", data.responseCode);
             console.log(data.result as string)
-            const responseObj: object = JSON.parse(data.result + '');
+            const responseObj: res_once_log = JSON.parse(data.result + '');
             if (data.responseCode !== 200) {
-              reject(responseObj["message"])
+              reject(responseObj.message)
               promptAction.showToast({
-                message: responseObj["message"]
+                message: responseObj.message
               });
             }
             if (data.responseCode === 200) {

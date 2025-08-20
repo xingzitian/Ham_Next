@@ -49,6 +49,7 @@ export struct add_log {
   private select : number  = 0;
 
   @Consume('index') index: NavPathStack;
+  @StorageProp('token') token: string = '';
   @State timestamp:string='';
   @State frequency:number=0;
   @State contactCallsign:string='';
@@ -57,12 +58,12 @@ export struct add_log {
   @State notes:string='';
   @State mode :string=''
 
-  @State mode_0:string=''
+  @State mode_0:string='模式选择'
 
   @State hours:string='';
   @State minute:string='';
 
-  @StorageProp('token') token: string = '';
+
 
 
   async http_add_log_request( token: string) {
@@ -118,7 +119,7 @@ export struct add_log {
                 });
               })
 
-            Button('模式选择')
+            Button(this.mode_0+this.mode)
               .margin(15)
               .width('40%')
               .onClick(() => {
@@ -143,14 +144,8 @@ export struct add_log {
               Text(this.timestamp)
                 .fontSize(18)
             }
-
-            Text('已经选择的模式：')
-              .fontSize(18)
-            if(this.mode!==''){
-              Text(this.mode_0+":"+this.mode)
-                .fontSize(18)
-            }
           }
+          .width('100%')
           .backgroundColor('#ffe5e5ea')
 
           Row() {

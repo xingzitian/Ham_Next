@@ -2,6 +2,7 @@ import {add_log} from './log/add_logs'
 import {login} from './user/login'
 import {register} from './user/register'
 import {log_search} from './log/search_log_list'
+import {log_info} from './log/log_info'
 
 import { PromptAction } from '@kit.ArkUI';
 //初始化持久存储
@@ -27,6 +28,8 @@ struct Index {
       login()
     }else if (name === "log_search") {
       log_search()
+    }else if (name === "log_info") {
+      log_info()
     }
   }
   build() {
@@ -42,7 +45,7 @@ struct Index {
                 TextClock()
                   .format("yyyy年M月d日HH:mm:ss")
               }
-              Divider().strokeWidth(5)
+              Divider().strokeWidth(5).color('#fff1f3f5')
               Row(){
                 Text("当前UTC时间：")
                   .fontSize(20)
@@ -50,13 +53,11 @@ struct Index {
                 TextClock({timeZoneOffset:0})
                   .format("yyyy年M月d日HH:mm:ss")
               }
-              Row(){
-                Text("当前用户呼号：")
-                  .fontSize(20)
-                Text(this.callsign)
+              Divider().strokeWidth(5).color('#fff1f3f5')
+
+                Text('当前用户呼号：'+this.callsign)
                   .fontSize(20)
 
-              }
               Row({ space: 35 }){
                 Image($r('app.media.quick_mark'))
                   .width(160)

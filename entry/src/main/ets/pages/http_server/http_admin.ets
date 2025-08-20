@@ -2,7 +2,7 @@ import { http } from '@kit.NetworkKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { promptAction } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { TeamData, message } from './httpService'
+
 
 let url_main: string = 'https://app.huiyou.zhangyulin.top:3000/api/';
 let audit_status: string = ''

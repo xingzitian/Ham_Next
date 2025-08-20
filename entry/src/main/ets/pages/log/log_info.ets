@@ -1,46 +1,51 @@
-import { Request,res_user,user_data,user,tx_log,rx_log,log_message,res_add_log,res_log_list_data,res_log_list,res_once_log,log_delete_res,
-  http_id,http_log_add,http_list_logs,http_once_logs,http_logs_manage } from '../http_server/httpService';
-import { http_admin_teams_change } from '../http_server/http_admin'
-import { LoadingDialog } from '@kit.ArkUI'
-import { common, Want } from '@kit.AbilityKit';
+import { http_once_logs, res_once_log } from '../http_server/httpService';
+
+import { LoadingDialog } from '@kit.ArkUI';
+import { common } from '@kit.AbilityKit';
 
 
 @Component
-export struct team_info {
+export struct log_info {
   context = getContext(this) as common.UIAbilityContext;
   dialogControllerProgress: CustomDialogController = new CustomDialogController({
     builder: LoadingDialog({
       content: '操作中',
     }),
   })
-  @State team_info: Array<rx_log> = [];
   //以下需要调用其他组件
   @Consume('index') index: NavPathStack;
+  @StorageProp('token') token: string = '';
 
-  @State log_id:number=0;
-  @State log_date:string='';
-  @State log_time:string='';
-  @State frequency:number=0;
-  @State other_username:string='';
-  @State rx_report:number=0;
-  @State tx_report:number=0;
-  @State summary:string='';
-@State user_id:number=0;
+  @StorageLink('log_code') log_code: number = 0;
+  @State log_info: res_once_log = {
+    success: true,
+    message: '',
+    data: {
+      id: 0,
+      contactCallsign: '',
+      timestamp: '',
+      frequency: 0,
+      mode: '',
+      sentReport:'',
+      receivedReport: '',
+      notes: '',
+      user_id: 0,
+      createdAt: '',
+      updatedAt:'',
 
-  @State petalMapWant: Want = {
-    bundleName: 'com.huawei.hmos.maps.app',
-    uri: 'maps://routes',
+    }
   }
 
+
   aboutToAppear(): void {
-    // this.http_get_log_info(String(this.log_id),this.token);
+    this.http_get_log_info(String(this.log_code),this.token);
   }
 
   async http_get_log_info(log_id: string,token:string) {
     try {
       const response: res_once_log = await http_once_logs.httpRequest(log_id,token);
       console.log("http_once_logs" + response.message)
-
+      this.log_info=response
 
 
       // this.petalMapWant.parameters = {
@@ -58,10 +63,61 @@ export struct team_info {
 
   build() {
     NavDestination() {
+      Column({ space: 15 }) {
+        Text('日志时间(UTC时间)：'+this.log_info.data.timestamp)
+          .borderRadius(15)
+          .backgroundColor('#ffffffff')
+          .width('100%')
+          .height(50)
+          .fontSize(20)
+        Text('模式：'+this.log_info.data.mode)
+          .borderRadius(15)
+          .backgroundColor('#ffffffff')
+          .width('100%')
+          .height(50)
+          .fontSize(20)
+        Text('频率：'+this.log_info.data.frequency+'MHz')
+          .borderRadius(15)
+          .backgroundColor('#ffffffff')
+          .width('100%')
+          .height(50)
+          .fontSize(20)
+        Text('对方呼号：'+this.log_info.data.contactCallsign)
+          .borderRadius(15)
+          .backgroundColor('#ffffffff')
+          .width('100%')
+          .height(50)
+          .fontSize(20)
+        Text('信号报告：')
+          .fontSize(20)
+        Row() {
+          Text('收方：' + this.log_info.data.receivedReport)
+            .fontSize(20)
+          Text('收方：' + this.log_info.data.sentReport)
+            .fontSize(20)
+        }
+        .borderRadius(15)
+        .backgroundColor('#ffffffff')
+        .width('100%')
+        .height(50)
+        Text('备注：')
+          .fontSize(20)
+        Text(this.log_info.data.notes)
+          .borderRadius(15)
+          .backgroundColor('#ffffffff')
+          .width('100%')
+          .height(50)
+          .fontSize(20)
 
-
+      }
+      .alignItems(HorizontalAlign.Start)
+      .width('90%')
     }
     .backgroundColor($r('sys.color.container_modal_unfocus_background'))
     .title('日志详情')
+    .onBackPressed(() => {
+      this.index.pop() // 弹出路由栈栈顶元素
+      return true
+    })
   }
 }
