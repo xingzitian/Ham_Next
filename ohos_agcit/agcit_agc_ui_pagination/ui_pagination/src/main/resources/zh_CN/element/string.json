@@ -1,0 +1,18 @@
+{
+    "string":[
+        {
+            "name":"prev_text",
+            "value":"上一页",
+            "attr":{
+                "priority":"translate"
+            }
+        },
+        {
+            "name":"next_text",
+            "value":"下一页",
+            "attr":{
+                "priority":"translate"
+            }
+        }
+    ]
+}

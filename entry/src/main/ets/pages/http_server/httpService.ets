@@ -216,13 +216,13 @@ class http_log_add {
 
 class http_list_logs {
   //这个都是查询或者添加相关的路由
-  static async httpRequest( use:number,page:number, token: string,date?:string,mode?:string,contactCallsign?:string,minFrequency?:number,maxFrequency?:number): Promise<res_log_list> {
+  static async httpRequest( use:number,page:number, token: string,extar:string): Promise<res_log_list> {
       //获取日志列表
     if(use===0){
-      mode_url = 'logs?'+'page='+page+'&limit=5'
+      mode_url = 'logs?page=1&limit=5'
     }
     else{
-      mode_url = 'logs?'+ 'date='+date+'&contactCallsign='+contactCallsign+'&mode='+mode+'&minFrequency='+minFrequency+'&maxFrequency='+maxFrequency+'&page='+page+'&limit=5'
+      mode_url = 'logs?limit=5&page='+page+ extar
     }
       HttpRequestOptions = { method: http.RequestMethod.GET,
         header: {

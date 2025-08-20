@@ -1,0 +1,15 @@
+{
+  "name": "@hw-agconnect/ui-pagination",
+  "version": "1.0.0",
+  "description": "ui-pagination是一个基于open harmony基础组件开发的分页器组件，包括图标按钮和文字按钮两种版本，支持输入当前页码以及支持设置主题色等。",
+  "keywords": [
+    "分页器",
+    "分页组件",
+    "页码按钮",
+    "Pagination",
+  ],
+  "main": "Index.ets",
+  "author": "hms",
+  "license": "ISC",
+  "dependencies": {}
+}

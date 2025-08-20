@@ -28,7 +28,7 @@ export struct private_huawei_web_page {
 }
 
 @Component
-export struct private_dada_web_page {
+export struct private_cq_web_page {
   controller: webview.WebviewController = new webview.WebviewController();
 
   build() {
@@ -40,3 +40,46 @@ export struct private_dada_web_page {
     }
   }
 }
+
+@Component
+export struct ham_set {
+  controller: webview.WebviewController = new webview.WebviewController();
+
+  build() {
+    NavDestination() {
+      Web({
+        src: 'https://ham-dev.c5r.app/',
+        controller: this.controller
+      })
+    }
+  }
+}
+
+//
+// @Component
+// export struct private_cq_web_page {
+//   controller: webview.WebviewController = new webview.WebviewController();
+//
+//   build() {
+//     NavDestination() {
+//       Web({
+//         src: 'https://www.xingzitian.top/privacy.html',
+//         controller: this.controller
+//       })
+//     }
+//   }
+// }
+//
+// @Component
+// export struct private_cq_web_page {
+//   controller: webview.WebviewController = new webview.WebviewController();
+//
+//   build() {
+//     NavDestination() {
+//       Web({
+//         src: 'https://www.xingzitian.top/privacy.html',
+//         controller: this.controller
+//       })
+//     }
+//   }
+// }

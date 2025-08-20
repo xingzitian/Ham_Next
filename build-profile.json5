@@ -5,13 +5,13 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "certpath": "C:\\Users\\31629\\.ohos\\config\\default_CQ_I8Z4aIGnlbjRiyy7nAbb1niHapu5iDMEEBCwAENPQ5w=.cer",
-          "keyAlias": "debugKey",
-          "keyPassword": "0000001B72FEE27F885F143E870DDBF86E143F3EA479A86F89B22C5727AFC4D986FDF8F04E419698F45D16",
-          "profile": "C:\\Users\\31629\\.ohos\\config\\default_CQ_I8Z4aIGnlbjRiyy7nAbb1niHapu5iDMEEBCwAENPQ5w=.p7b",
+          "storeFile": "C:/Users/31629/Desktop/hw/next/证书以及发布相关文件/key_release_dada.p12",
+          "storePassword": "00000022AA6C2575C82B7FEBE976DBCF5D7F40364393E83220B34DC8A18A64F303A1D03C65D2653A738FE0C9904B99BAB112",
+          "keyAlias": "key_release_dada",
+          "keyPassword": "000000227D0357BCEB61F6D1873553862028DB953B2925A6C71AAF26457744DB0298FBF3983D88BCCF5D0BE9F5FE309EB6DE",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "C:\\Users\\31629\\.ohos\\config\\default_CQ_I8Z4aIGnlbjRiyy7nAbb1niHapu5iDMEEBCwAENPQ5w=.p12",
-          "storePassword": "0000001B73745031A8EC9941370A24F45B9BFD93A073848DAF1E19181582EA628890080D412DA18F9CCC88"
+          "profile": "C:/Users/31629/Desktop/hw/next/证书以及发布相关文件/debug_file/debug_cqDebug.p7b",
+          "certpath": "C:/Users/31629/Desktop/hw/next/证书以及发布相关文件/debug_file/debug.cer"
         }
       }
     ],
@@ -32,7 +32,7 @@
     ],
     "buildModeSet": [
       {
-        "name": "debug",
+        "name": "debug"
       },
       {
         "name": "release"
@@ -51,6 +51,10 @@
           ]
         }
       ]
+    },
+    {
+      "name": "ui_pagination",
+      "srcPath": "./ohos_agcit/agcit_agc_ui_pagination/ui_pagination"
     }
   ]
 }

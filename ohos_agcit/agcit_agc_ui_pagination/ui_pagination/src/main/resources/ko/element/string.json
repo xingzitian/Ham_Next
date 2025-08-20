@@ -1,0 +1,18 @@
+{
+    "string":[
+        {
+            "name":"prev_text",
+            "value":"이전",
+            "attr":{
+                "priority":"translate"
+            }
+        },
+        {
+            "name":"next_text",
+            "value":"다음",
+            "attr":{
+                "priority":"translate"
+            }
+        }
+    ]
+}

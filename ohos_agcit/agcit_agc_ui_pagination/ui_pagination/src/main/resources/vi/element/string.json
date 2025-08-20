@@ -1,0 +1,18 @@
+{
+    "string":[
+        {
+            "name":"prev_text",
+            "value":"Trước",
+            "attr":{
+                "priority":"translate"
+            }
+        },
+        {
+            "name":"next_text",
+            "value":"Tiếp",
+            "attr":{
+                "priority":"translate"
+            }
+        }
+    ]
+}

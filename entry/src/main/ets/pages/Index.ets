@@ -3,8 +3,28 @@ import {login} from './user/login'
 import {register} from './user/register'
 import {log_search} from './log/search_log_list'
 import {log_info} from './log/log_info'
+import {about} from './about/about'
+import {base_info} from './cw/base_info'
+import {base_info_1,base_info_2,base_info_3} from './cw/cq_info'
+import {MaidenheadLocator} from './cw/base_resource'
+import {beian_web_page,private_huawei_web_page,private_cq_web_page,ham_set,
+  } from './about/Web_page'
 
+import { sceneMap } from '@kit.MapKit';
+import { BusinessError } from '@kit.BasicServicesKit';
+import { common } from '@kit.AbilityKit';
 import { PromptAction } from '@kit.ArkUI';
+let locationChoosingOptions: sceneMap.LocationChoosingOptions = {
+  // 地图中心点坐标
+  //location: { latitude: 39.92194051376904, longitude: 116.3971836796932 },
+  language: 'cn',
+  // 展示搜索控件
+  searchEnabled: true,
+  // 展示附近Poi
+  showNearbyPoi: true
+};
+
+
 //初始化持久存储
 PersistentStorage.persistProp('token', '');
 PersistentStorage.persistProp('callsign', '');
@@ -18,6 +38,10 @@ struct Index {
   @Provide('index') index: NavPathStack = new NavPathStack()
   @StorageLink('token') token: string = ''
   @StorageLink('callsign') callsign: string = '';
+
+  @State locator:string=''
+  @State locationName:string=''
+
   @Builder
   PageMap(name: string) {
     if (name === "add_log") {
@@ -30,6 +54,24 @@ struct Index {
       log_search()
     }else if (name === "log_info") {
       log_info()
+    }else if (name === "beian_web_page") {
+      beian_web_page()
+    }else if (name === "private_huawei_web_page") {
+      private_huawei_web_page()
+    }else if (name === "private_cq_web_page") {
+      private_cq_web_page()
+    }else if (name === "ham_set") {
+      ham_set()
+    }else if (name === "about") {
+      about()
+    }else if (name === "base_info_1") {
+      base_info_1()
+    }else if (name === "base_info") {
+      base_info()
+    }else if (name === "base_info_2") {
+      base_info_2()
+    }else if (name === "base_info_3") {
+      base_info_3()
     }
   }
   build() {
@@ -38,6 +80,7 @@ struct Index {
         Tabs({ barPosition: BarPosition.End, controller: this.controller }){
           TabContent(){
             Column(){
+              Divider().strokeWidth(5).color('#fff1f3f5')
               Row(){
                 Text("当前时区时间：")
                   .fontSize(20)
@@ -57,7 +100,7 @@ struct Index {
 
                 Text('当前用户呼号：'+this.callsign)
                   .fontSize(20)
-
+              Divider().strokeWidth(5).color('#fff1f3f5')
               Row({ space: 35 }){
                 Image($r('app.media.quick_mark'))
                   .width(160)
@@ -78,12 +121,65 @@ struct Index {
 
 
           TabContent(){
+            Column({ space: 5 }){
+              Divider().strokeWidth(5).color('#fff1f3f5')
+              Text('基础知识')
+                .borderRadius(15)
+                .backgroundColor('#ffffffff')
+                .width('100%')
+                .height(50)
+                .fontSize(20)
+                .onClick(() => {
+                  this.index.pushPath({ name: 'base_info' })
+                })
+              Divider().strokeWidth(2).color('#fff1f3f5')
+              Text('梅登海德网格定位系统(点我选点计算)')
 
+                .borderRadius(15)
+                .backgroundColor('#ffffffff')
+                .width('100%')
+                .height(50)
+                .fontSize(20)
+                .onClick(() => {
+                  sceneMap.chooseLocation(getContext(this) as common.UIAbilityContext, locationChoosingOptions)
+                    .then((data) => {
+                      console.info("ChooseLocation", "Succeeded in choosing location.");
+                      console.log(data.siteId)
+                      console.log(data.name)
+                      console.log(data.address)
+                      console.log("long:" + String(data.location.longitude) + "lat:" + String(data.location.latitude))
+                      console.log(data.addressComponent?.adminLevel5)
+                      console.log(String(data.zoom))
+                      const locator = new MaidenheadLocator(data.location.longitude, data.location.latitude);
+                      this.locator=locator.toString()
+                      this.locationName = data.name as string;
+                    })
+                    .catch((err: BusinessError) => {
+                      console.error("ChooseLocation",
+                        `Failed to choose location, code: ${err.code}, message: ${err.message}`);
+                    });
+                })
+              if(this.locator!==''){
+                Row(){
+                  Text('选择的位置:')
+                  Text(this.locationName)
+                }
+                Text('梅登海德网格定位结果:')
+                Text(this.locator)
+              }
+              Divider().strokeWidth(2).color('#fff1f3f5')
+
+            }
+            .height('100%')
+            .width("90%")
           }
+
+          .backgroundColor($r('sys.color.container_modal_unfocus_background'))
           .tabBar("工具")
 
           TabContent() {
             Column() {
+              Divider().strokeWidth(5).color('#fff1f3f5')
               //用户信息行
               Row() {
                 if (this.token === '') {

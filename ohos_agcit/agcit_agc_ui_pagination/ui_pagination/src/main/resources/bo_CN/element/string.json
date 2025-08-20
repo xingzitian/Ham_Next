@@ -1,0 +1,18 @@
+{
+    "string":[
+        {
+            "name":"prev_text",
+            "value":"ཤོག་ངོས་གོང་མ།",
+            "attr":{
+                "priority":"LT"
+            }
+        },
+        {
+            "name":"next_text",
+            "value":"ཤོག་ངོས་རྗེས་མ།",
+            "attr":{
+                "priority":"LT"
+            }
+        }
+    ]
+}

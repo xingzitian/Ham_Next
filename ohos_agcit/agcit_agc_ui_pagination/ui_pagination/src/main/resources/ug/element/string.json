@@ -1,0 +1,18 @@
+{
+    "string":[
+        {
+            "name":"prev_text",
+            "value":"ئالدىنقى",
+            "attr":{
+                "priority":"LT"
+            }
+        },
+        {
+            "name":"next_text",
+            "value":"كېيىنكى",
+            "attr":{
+                "priority":"LT"
+            }
+        }
+    ]
+}

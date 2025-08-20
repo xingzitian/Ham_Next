@@ -1,0 +1,22 @@
+{
+    "string":[
+        {
+            "name":"agcit_agc_ui_pagination",
+            "value":"1.0.0"
+        },
+        {
+            "name":"prev_text",
+            "value":"Previous",
+            "attr":{
+                "priority":"LT"
+            }
+        },
+        {
+            "name":"next_text",
+            "value":"Next",
+            "attr":{
+                "priority":"LT"
+            }
+        }
+    ]
+}

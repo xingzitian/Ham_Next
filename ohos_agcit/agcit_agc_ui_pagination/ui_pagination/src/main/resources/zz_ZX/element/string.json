@@ -1,0 +1,16 @@
+{
+    "string":[
+        {
+            "name":"prev_text",
+            "value":"[TS_1011975]_Previous"
+        },
+        {
+            "name":"next_text",
+            "value":"[TS_1011967]_Next"
+        },
+        {
+            "name":"agcit_agc_ui_pagination",
+            "value":"[TS_1040333]_1.0.0"
+        }
+    ]
+}

@@ -1,0 +1,12 @@
+{
+  "string": [
+    {
+      "name": "prev_text",
+      "value": "last"
+    },
+    {
+      "name": "next_text",
+      "value": "next"
+    }
+  ]
+}

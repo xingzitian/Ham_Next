@@ -1,0 +1,18 @@
+{
+    "string":[
+        {
+            "name":"prev_text",
+            "value":"前",
+            "attr":{
+                "priority":"translate"
+            }
+        },
+        {
+            "name":"next_text",
+            "value":"次",
+            "attr":{
+                "priority":"translate"
+            }
+        }
+    ]
+}

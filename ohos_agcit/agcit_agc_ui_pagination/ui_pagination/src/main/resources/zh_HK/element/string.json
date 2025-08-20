@@ -1,0 +1,18 @@
+{
+    "string":[
+        {
+            "name":"prev_text",
+            "value":"上一頁",
+            "attr":{
+                "priority":"LT"
+            }
+        },
+        {
+            "name":"next_text",
+            "value":"下一頁",
+            "attr":{
+                "priority":"LT"
+            }
+        }
+    ]
+}

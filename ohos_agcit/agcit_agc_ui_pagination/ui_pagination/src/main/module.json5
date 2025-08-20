@@ -1,0 +1,11 @@
+{
+  "module": {
+    "name": "ui_pagination",
+    "type": "har",
+    "deviceTypes": [
+      "default",
+      "tablet",
+      "2in1"
+    ]
+  }
+}
