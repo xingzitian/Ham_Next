@@ -15,8 +15,6 @@ export struct about {
           .onClick(() => {
             this.index.pushPath({ name: 'private_cq_web_page' })
           })
-        Text('开源项目：')
-        Text('1.'+'https://github.com/HoshinoSuzumi/ham-set')
       }
     }
     .title('关于我们')

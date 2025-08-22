@@ -1,19 +1,21 @@
-import {add_log} from './log/add_logs'
-import {login} from './user/login'
-import {register} from './user/register'
-import {log_search} from './log/search_log_list'
-import {log_info} from './log/log_info'
-import {about} from './about/about'
-import {base_info} from './cw/base_info'
-import {base_info_1,base_info_2,base_info_3} from './cw/cq_info'
-import {MaidenheadLocator} from './cw/base_resource'
-import {beian_web_page,private_huawei_web_page,private_cq_web_page,ham_set,
-  } from './about/Web_page'
+import { add_log } from './log/add_logs'
+import { login } from './user/login'
+import { register } from './user/register'
+import { log_search } from './log/search_log_list'
+import { log_info } from './log/log_info'
+import { about } from './about/about'
+import { base_info } from './cw/base_info'
+import { base_info_1, base_info_2, base_info_3 } from './cw/cq_info'
+import { MaidenheadLocator } from './cw/base_resource'
+import { MorseCodeConverter } from './cw/MorseCodeConverter'
+import { MorseMinimalPractice } from './cw/MorseMinimalPractice'
 
-import { sceneMap } from '@kit.MapKit';
-import { BusinessError } from '@kit.BasicServicesKit';
-import { common } from '@kit.AbilityKit';
-import { PromptAction } from '@kit.ArkUI';
+import { beian_web_page, private_cq_web_page, private_huawei_web_page, } from './about/Web_page'
+
+import { sceneMap } from '@kit.MapKit'
+import { BusinessError } from '@kit.BasicServicesKit'
+import { common } from '@kit.AbilityKit'
+import { PromptAction } from '@kit.ArkUI'
 let locationChoosingOptions: sceneMap.LocationChoosingOptions = {
   // 地图中心点坐标
   //location: { latitude: 39.92194051376904, longitude: 116.3971836796932 },
@@ -60,8 +62,6 @@ struct Index {
       private_huawei_web_page()
     }else if (name === "private_cq_web_page") {
       private_cq_web_page()
-    }else if (name === "ham_set") {
-      ham_set()
     }else if (name === "about") {
       about()
     }else if (name === "base_info_1") {
@@ -72,6 +72,10 @@ struct Index {
       base_info_2()
     }else if (name === "base_info_3") {
       base_info_3()
+    }else if (name === "MorseCodeConverter") {
+      MorseCodeConverter()
+    }else if (name === "MorseMinimalPractice") {
+      MorseMinimalPractice()
     }
   }
   build() {
@@ -98,8 +102,8 @@ struct Index {
               }
               Divider().strokeWidth(5).color('#fff1f3f5')
 
-                Text('当前用户呼号：'+this.callsign)
-                  .fontSize(20)
+              Text('当前用户呼号：'+this.callsign)
+                .fontSize(20)
               Divider().strokeWidth(5).color('#fff1f3f5')
               Row({ space: 35 }){
                 Image($r('app.media.quick_mark'))
@@ -125,18 +129,15 @@ struct Index {
               Divider().strokeWidth(5).color('#fff1f3f5')
               Text('基础知识')
                 .borderRadius(15)
-                .backgroundColor('#ffffffff')
                 .width('100%')
                 .height(50)
                 .fontSize(20)
                 .onClick(() => {
                   this.index.pushPath({ name: 'base_info' })
                 })
-              Divider().strokeWidth(2).color('#fff1f3f5')
+              Divider().strokeWidth(3).color('#fff1f3f5')
               Text('梅登海德网格定位系统(点我选点计算)')
-
                 .borderRadius(15)
-                .backgroundColor('#ffffffff')
                 .width('100%')
                 .height(50)
                 .fontSize(20)
@@ -168,13 +169,29 @@ struct Index {
                 Text(this.locator)
               }
               Divider().strokeWidth(2).color('#fff1f3f5')
+              Text('文字转摩尔斯电码音频')
+                .borderRadius(15)
+                .width('100%')
+                .height(50)
+                .fontSize(20)
+                .onClick(() => {
+                  this.index.pushPath({ name: 'MorseCodeConverter' })
+                })
+              Divider().strokeWidth(3).color('#fff1f3f5')
+              Text('摩尔斯电码练习')
+                .borderRadius(15)
+                .width('100%')
+                .height(50)
+                .fontSize(20)
+                .onClick(() => {
+                  this.index.pushPath({ name: 'MorseMinimalPractice' })
+                })
+              Divider().strokeWidth(3).color('#fff1f3f5')
 
             }
             .height('100%')
             .width("90%")
           }
-
-          .backgroundColor($r('sys.color.container_modal_unfocus_background'))
           .tabBar("工具")
 
           TabContent() {

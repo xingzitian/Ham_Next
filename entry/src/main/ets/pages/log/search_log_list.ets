@@ -117,10 +117,10 @@ export struct log_search {
       this.log_list = response
       this.total=this.log_list.data.pagination.totalCount
 
-        this.promptAction.showToast({
-          message: '查询成功，共计'+this.total+"条",
-          duration: 2000
-        })
+      this.promptAction.showToast({
+        message: '查询成功，共计'+this.total+"条",
+        duration: 2000
+      })
 
     } catch (error) {
       console.error('Error occurred during request:', error);

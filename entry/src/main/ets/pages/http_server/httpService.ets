@@ -2,7 +2,6 @@ import { http } from '@kit.NetworkKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { promptAction } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { data } from '@kit.TelephonyKit';
 
 //学习记录，关于promise的返回值的设置
 //1.resolve是成功
@@ -161,23 +160,23 @@ class http_id {
 
 class http_log_add {
   static async httpRequest(tx:tx_log ,token: string): Promise<res_add_log> {
-      //创建队伍
-      mode_url = 'logs'
-      HttpRequestOptions = { method: http.RequestMethod.POST,
-        header: { 'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token
-        },
-        extraData: {
-          "contactCallsign": tx.contactCallsign,
-          "timestamp": tx.timestamp, // ISO 8601 格式的日期字符串
-          "frequency":tx.frequency,
-          "mode": tx.mode,
-          "sentReport": tx.sentReport,
-          "receivedReport": tx.receivedReport,
-          "notes": tx.notes // 可选字段
+    //创建队伍
+    mode_url = 'logs'
+    HttpRequestOptions = { method: http.RequestMethod.POST,
+      header: { 'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      extraData: {
+        "contactCallsign": tx.contactCallsign,
+        "timestamp": tx.timestamp, // ISO 8601 格式的日期字符串
+        "frequency":tx.frequency,
+        "mode": tx.mode,
+        "sentReport": tx.sentReport,
+        "receivedReport": tx.receivedReport,
+        "notes": tx.notes // 可选字段
 
-        }
       }
+    }
 
     return new Promise((resolve, reject) => {
       let httpRequest = http.createHttp();
@@ -217,19 +216,19 @@ class http_log_add {
 class http_list_logs {
   //这个都是查询或者添加相关的路由
   static async httpRequest( use:number,page:number, token: string,extar:string): Promise<res_log_list> {
-      //获取日志列表
+    //获取日志列表
     if(use===0){
       mode_url = 'logs?page=1&limit=5'
     }
     else{
       mode_url = 'logs?limit=5&page='+page+ extar
     }
-      HttpRequestOptions = { method: http.RequestMethod.GET,
-        header: {
+    HttpRequestOptions = { method: http.RequestMethod.GET,
+      header: {
         'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token
-        }
+        'Authorization': 'Bearer ' + token
       }
+    }
 
     return new Promise((resolve, reject) => {
       let httpRequest = http.createHttp();

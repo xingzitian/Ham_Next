@@ -1,10 +1,6 @@
-import { res_user,user_data,tx_log,rx_log,res_add_log,res_log_list,res_once_log,
-  http_id,http_log_add,http_list_logs,http_once_logs, } from '../http_server/httpService';
+import { http_log_add, tx_log } from '../http_server/httpService';
 import { sceneMap } from '@kit.MapKit';
-import { BusinessError } from '@kit.BasicServicesKit';
-import { common } from '@kit.AbilityKit';
-import { LoadingDialog } from '@kit.ArkUI'
-import { PromptAction } from '@kit.ArkUI';
+import { LoadingDialog, PromptAction } from '@kit.ArkUI';
 
 //单文件项目标识add_logs
 //完成
@@ -94,117 +90,117 @@ export struct add_log {
 
   build() {
     NavDestination() {
-        Column({ space: 25 }) {
-          Row(){
-            Button('选择日期')
-              .width('40%')
-              .margin(15)
-              .onClick(() => {
-                this.getUIContext().showDatePickerDialog({
-                  start: new Date("2000-1-1"),
-                  end: new Date("2100-12-31"),
-                  showTime: true,
-                  useMilitaryTime:true,
-                  onDateAccept: (date: Date) => {
-                    const year = date.getFullYear();
-                    const month = ("0" + (date.getMonth() + 1)).slice(-2); // 月份从0开始，需要加1并补0
-                    const day = ("0" + date.getDate()).slice(-2); // 日期补0
-                    console.log("获取的时间："+year+"-"+month+"-"+day)
-                    console.log("获取的时间1："+date.getTime())
-                    console.log("获取的时间2："+date.toISOString())
-                    console.log("获取的时间3："+date.toUTCString())
-                    this.timestamp=date.toISOString()
+      Column({ space: 25 }) {
+        Row(){
+          Button('选择日期')
+            .width('40%')
+            .margin(15)
+            .onClick(() => {
+              this.getUIContext().showDatePickerDialog({
+                start: new Date("2000-1-1"),
+                end: new Date("2100-12-31"),
+                showTime: true,
+                useMilitaryTime:true,
+                onDateAccept: (date: Date) => {
+                  const year = date.getFullYear();
+                  const month = ("0" + (date.getMonth() + 1)).slice(-2); // 月份从0开始，需要加1并补0
+                  const day = ("0" + date.getDate()).slice(-2); // 日期补0
+                  console.log("获取的时间："+year+"-"+month+"-"+day)
+                  console.log("获取的时间1："+date.getTime())
+                  console.log("获取的时间2："+date.toISOString())
+                  console.log("获取的时间3："+date.toUTCString())
+                  this.timestamp=date.toISOString()
 
-                  },
-                });
-              })
-
-            Button(this.mode_0+this.mode)
-              .margin(15)
-              .width('40%')
-              .onClick(() => {
-                this.getUIContext().showTextPickerDialog({
-                  range: this.fruits,
-                  selected: this.select,
-                  onAccept: (value: TextPickerResult) => {
-                    this.select = value.index as number
-                    console.log("选择的模式："+value.value)
-                    this.mode_0=value.value[0]
-                    this.mode=value.value[1]
-                  }
-                });
-              })
-          }
-          .width('100%')
-
-          Column(){
-            Text('已经选择的日期(UTC时间)：')
-              .fontSize(18)
-            if(this.timestamp!==''){
-              Text(this.timestamp)
-                .fontSize(18)
-            }
-          }
-          .width('100%')
-          .backgroundColor('#ffe5e5ea')
-
-          Row() {
-            Text('频率：')
-              .fontSize(18)
-            TextInput({ placeholder: '请输入频率' })
-              .type(InputType.NUMBER_DECIMAL)
-              .onChange((frequency: string) => {
-                this.frequency=Number(frequency)
+                },
               });
-            Text('MHz')
-              .fontSize(18)
-          }
-          .width('50%')
+            })
 
-          Row() {
-            Text('对方呼号：')
-              .fontSize(18)
-            TextInput({ placeholder: '请输入对方呼号' })
-              .type(InputType.Normal)
-              .onChange((contactCallsign: string) => {
-                this.contactCallsign=contactCallsign
+          Button(this.mode_0+this.mode)
+            .margin(15)
+            .width('40%')
+            .onClick(() => {
+              this.getUIContext().showTextPickerDialog({
+                range: this.fruits,
+                selected: this.select,
+                onAccept: (value: TextPickerResult) => {
+                  this.select = value.index as number
+                  console.log("选择的模式："+value.value)
+                  this.mode_0=value.value[0]
+                  this.mode=value.value[1]
+                }
               });
-          }
-          .width('50%')
-
-          Row() {
-            Column(){
-              Text('信号报告：')
-                .fontSize(18)
-            }
-              TextInput({ placeholder: '收方' })
-                .width('30%')
-                .type(InputType.Number)
-                .onChange((receivedReport: string) => {
-                  this.receivedReport=receivedReport
-                });
-
-              TextInput({ placeholder: '发方' })
-                .width('30%')
-                .type(InputType.Number)
-                .onChange((sentReport: string) => {
-                  this.sentReport=sentReport
-                });
-          }
-          .width('100%')
-
-          Row() {
-            Text('备注：')
-              .fontSize(18)
-            TextArea({ placeholder: '请输入备注' })
-              .onChange((notes: string) => {
-                this.notes=notes
-              });
-          }
-          .width('50%')
+            })
         }
-        .alignItems(HorizontalAlign.Start)
-        .width('90%')
+        .width('100%')
+
+        Column(){
+          Text('已经选择的日期(UTC时间)：')
+            .fontSize(18)
+          if(this.timestamp!==''){
+            Text(this.timestamp)
+              .fontSize(18)
+          }
+        }
+        .width('100%')
+        .backgroundColor('#ffe5e5ea')
+
+        Row() {
+          Text('频率：')
+            .fontSize(18)
+          TextInput({ placeholder: '请输入频率' })
+            .type(InputType.NUMBER_DECIMAL)
+            .onChange((frequency: string) => {
+              this.frequency=Number(frequency)
+            });
+          Text('MHz')
+            .fontSize(18)
+        }
+        .width('50%')
+
+        Row() {
+          Text('对方呼号：')
+            .fontSize(18)
+          TextInput({ placeholder: '请输入对方呼号' })
+            .type(InputType.Normal)
+            .onChange((contactCallsign: string) => {
+              this.contactCallsign=contactCallsign
+            });
+        }
+        .width('50%')
+
+        Row() {
+          Column(){
+            Text('信号报告：')
+              .fontSize(18)
+          }
+          TextInput({ placeholder: '收方' })
+            .width('30%')
+            .type(InputType.Number)
+            .onChange((receivedReport: string) => {
+              this.receivedReport=receivedReport
+            });
+
+          TextInput({ placeholder: '发方' })
+            .width('30%')
+            .type(InputType.Number)
+            .onChange((sentReport: string) => {
+              this.sentReport=sentReport
+            });
+        }
+        .width('100%')
+
+        Row() {
+          Text('备注：')
+            .fontSize(18)
+          TextArea({ placeholder: '请输入备注' })
+            .onChange((notes: string) => {
+              this.notes=notes
+            });
+        }
+        .width('50%')
+      }
+      .alignItems(HorizontalAlign.Start)
+      .width('90%')
 
       Column() {
         Row() {
@@ -226,27 +222,27 @@ export struct add_log {
       .margin({top:25})
       .alignItems(HorizontalAlign.Center)
 
-          // Row() {
-          //   Button('选择地点')
-          //     .width(150)
-          //     .onClick(() => {
-          //       sceneMap.chooseLocation(getContext(this) as common.UIAbilityContext, locationChoosingOptions)
-          //         .then((data) => {
-          //           console.info("ChooseLocation", "Succeeded in choosing location.");
-          //           console.log(data.siteId)
-          //           console.log(data.name)
-          //           console.log(data.address)
-          //           console.log("long:" + String(data.location.longitude) + "lat:" + String(data.location.latitude))
-          //           console.log(data.addressComponent?.adminLevel5)
-          //           console.log(String(data.zoom))
-          //         })
-          //         .catch((err: BusinessError) => {
-          //           console.error("ChooseLocation",
-          //             `Failed to choose location, code: ${err.code}, message: ${err.message}`);
-          //         });
-          //     })
-          // }
-          // .justifyContent(FlexAlign.Start)
+      // Row() {
+      //   Button('选择地点')
+      //     .width(150)
+      //     .onClick(() => {
+      //       sceneMap.chooseLocation(getContext(this) as common.UIAbilityContext, locationChoosingOptions)
+      //         .then((data) => {
+      //           console.info("ChooseLocation", "Succeeded in choosing location.");
+      //           console.log(data.siteId)
+      //           console.log(data.name)
+      //           console.log(data.address)
+      //           console.log("long:" + String(data.location.longitude) + "lat:" + String(data.location.latitude))
+      //           console.log(data.addressComponent?.adminLevel5)
+      //           console.log(String(data.zoom))
+      //         })
+      //         .catch((err: BusinessError) => {
+      //           console.error("ChooseLocation",
+      //             `Failed to choose location, code: ${err.code}, message: ${err.message}`);
+      //         });
+      //     })
+      // }
+      // .justifyContent(FlexAlign.Start)
     }
     .title('日志创建')
     .onBackPressed(() => {

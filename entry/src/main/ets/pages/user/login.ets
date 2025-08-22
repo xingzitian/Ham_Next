@@ -1,7 +1,5 @@
-import { res_user,user_data,tx_log,rx_log,res_add_log,res_log_list,res_once_log,
-  http_id,http_log_add,http_list_logs,http_once_logs, } from '../http_server/httpService';
-import { LoadingDialog } from '@kit.ArkUI'
-import { PromptAction } from '@kit.ArkUI';
+import { http_id } from '../http_server/httpService';
+import { LoadingDialog, PromptAction } from '@kit.ArkUI';
 
 //单文件项目标识login
 //完成
