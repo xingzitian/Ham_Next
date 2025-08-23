@@ -1,7 +1,6 @@
-// MorseCodeConverter.ets
+// MorseTraining.ets
 import audio from '@ohos.multimedia.audio';
 import promptAction from '@ohos.promptAction';
-import { BusinessError } from '@ohos.base';
 
 // 摩尔斯电码映射表
 const MORSE_CODE_MAP: Record<string, string> = {
@@ -18,6 +17,19 @@ const MORSE_CODE_MAP: Record<string, string> = {
   '@': '.--.-.'
 };
 
+// 预定义单词列表和句子模板
+const WORD_LIST: string[] = [
+  'HELLO', 'WORLD', 'HAM', 'RADIO', 'TEST', 'CODE', 'MORSE',
+  'SOS', 'QUICK', 'BROWN', 'FOX', 'JUMP', 'LAZY', 'DOG'
+];
+
+const SENTENCE_TEMPLATES: string[] = [
+  'THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG',
+  'SOS IS THE INTERNATIONAL MORSE CODE DISTRESS SIGNAL',
+  'HAM RADIO OPERATORS USE MORSE CODE',
+  'PRACTICE MAKES PERFECT'
+];
+
 // 时间参数接口
 interface MorseTimingParameters {
   dotLength: number;
@@ -28,29 +40,42 @@ interface MorseTimingParameters {
 }
 
 @Component
-export struct MorseCodeConverter {
+export struct MorseTraining {
   @Consume('index') index: NavPathStack;
+
   // 状态变量
-  @State inputText: string = '';
-  @State morseCode: string = '';
+  @State currentContent: string = '';
+  @State userInput: string = '';
   @State isPlaying: boolean = false;
   @State frequency: number = 600;
   @State wpm: number = 15;
+  @State mode: string = 'word';
   @State statusMessage: string = '准备就绪';
+  @State correctAnswer: string = '';
+  @State startTime: number = 0;
+  @State elapsedTime: number = 0;
+  @State accuracy: number = 0;
+  @State isRandomFrequencyEnabled: boolean = false;
+  @State elapsedTimeDisplay: string = '0秒';
+  @State morseCodeOfAnswer: string = '';
+  @State isAnswerSubmitted: boolean = false;
 
-  // 音频渲染器和相关状态
+  // 音频渲染器和相关状态（根据原始示例优化）
   private audioRenderer: audio.AudioRenderer | null = null;
-  private isAborted: boolean = false;
+  private isAborted: boolean = false; // 新增：中止标志
 
   private stateChangeCallback: (state: audio.AudioState) => void = () => {};
   private currentAudioState: audio.AudioState = audio.AudioState.STATE_NEW;
 
-
-  // PCM数据管理
+  // PCM数据管理（根据原始示例优化）
   private fullPcmData: ArrayBuffer | null = null;
   private pcmDataOffset: number = 0;
   private isPlaybackComplete: boolean = false;
   private allDataProvided: boolean = false;
+  private timerId: number = 0;
+  private currentDirection: number = 0; // 本次播放的固定变调方向（-1: 向下, 0: 不变, 1: 向上）
+
+
 
   // 计算基础点长（毫秒）
   calculateDotLength(wpm: number): number {
@@ -60,7 +85,6 @@ export struct MorseCodeConverter {
   // 根据WPM获取所有时间参数
   getTimingParameters(wpm: number): MorseTimingParameters {
     const dotLength = this.calculateDotLength(wpm);
-
     return {
       dotLength: dotLength,
       dashLength: 3 * dotLength,
@@ -74,14 +98,24 @@ export struct MorseCodeConverter {
   aboutToAppear() {
     console.log('页面即将显示，初始化音频渲染器');
     this.initAudioRenderer();
+    this.generateNewContent();
   }
 
   aboutToDisappear() {
     console.log('页面即将消失，释放音频渲染器');
     this.releaseAudioRenderer();
+    this.clearTimer();
   }
 
-  // 初始化音频渲染器
+  // 清除定时器
+  private clearTimer() {
+    if (this.timerId) {
+      clearInterval(this.timerId);
+      this.timerId = 0;
+    }
+  }
+
+  // 初始化音频渲染器（根据原始示例优化）
   async initAudioRenderer() {
     try {
       console.log('开始初始化音频渲染器');
@@ -94,8 +128,8 @@ export struct MorseCodeConverter {
         encodingType: audio.AudioEncodingType.ENCODING_TYPE_RAW
       };
       let audioRendererInfo: audio.AudioRendererInfo = {
-        usage: audio.StreamUsage.STREAM_USAGE_MUSIC, // 音频流使用类型：音乐。根据业务场景配置，参考StreamUsage。
-        rendererFlags: 0 // 音频渲染器标志。
+        usage: audio.StreamUsage.STREAM_USAGE_MUSIC,
+        rendererFlags: 0
       };
       let audioRendererOptions: audio.AudioRendererOptions = {
         streamInfo: audioStreamInfo,
@@ -110,12 +144,18 @@ export struct MorseCodeConverter {
         this.statusMessage = '音频设备创建失败';
         return;
       }
+
       // 设置状态变化监听器
       this.setupStateChangeListener();
 
       // 获取初始状态
       this.currentAudioState = this.audioRenderer.state;
       console.log('音频渲染器初始状态:', this.currentAudioState);
+
+      // 重置状态
+      this.isAborted = false;
+      this.isPlaybackComplete = false;
+      this.allDataProvided = false;
 
       console.log('音频渲染器创建成功');
       this.statusMessage = '准备就绪';
@@ -126,7 +166,7 @@ export struct MorseCodeConverter {
     }
   }
 
-  // 设置状态变化监听器
+  // 设置状态变化监听器（根据原始示例优化）
   private setupStateChangeListener() {
     if (!this.audioRenderer) return;
 
@@ -143,7 +183,7 @@ export struct MorseCodeConverter {
     console.log('状态变化监听器设置成功');
   }
 
-  // 处理状态变化
+  // 处理状态变化（根据原始示例优化）
   private handleStateChange(state: audio.AudioState) {
     switch (state) {
       case audio.AudioState.STATE_RUNNING:
@@ -169,8 +209,7 @@ export struct MorseCodeConverter {
     }
   }
 
-
-  // 停止后清理资源
+  // 停止后清理资源（根据原始示例优化）
   private cleanupAfterStop() {
     this.isPlaying = false;
     this.isPlaybackComplete = true;
@@ -180,18 +219,42 @@ export struct MorseCodeConverter {
     this.fullPcmData = null;
     this.pcmDataOffset = 0;
 
+    this.clearTimer();
     console.log('播放资源已清理');
   }
-  // 生成完整的PCM音频数据
+
+  // 生成完整的PCM音频数据（根据原始示例优化）
+  // 生成完整的PCM音频数据（修改：使用固定偏移量）
+  // 生成完整的PCM音频数据（修改：固定方向，每个符号独立随机变化）
   private generateFullPcmData(): ArrayBuffer {
     console.log('生成完整的PCM音频数据');
     const timing = this.getTimingParameters(this.wpm);
     const sampleRate = 48000;
     const amplitude = 0.5;
 
+    // 将当前内容转换为摩尔斯电码字符串
+    let morseString = '';
+    const text = this.currentContent.toUpperCase();
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      if (char === ' ') {
+        morseString += '/ ';
+        continue;
+      }
+      if (MORSE_CODE_MAP[char]) {
+        morseString += MORSE_CODE_MAP[char];
+        if (i < text.length - 1 && text[i + 1] !== ' ') {
+          morseString += ' ';
+        }
+      } else {
+        morseString += '?? ';
+      }
+    }
+    morseString = morseString.trim();
+
     // 计算总样本数
     let totalSamples = 0;
-    for (const symbol of this.morseCode) {
+    for (const symbol of morseString) {
       let duration: number;
       switch (symbol) {
         case '.': duration = timing.dotLength; break;
@@ -209,10 +272,9 @@ export struct MorseCodeConverter {
     let sampleOffset = 0;
 
     // 生成所有音频数据
-    for (const symbol of this.morseCode) {
+    for (const symbol of morseString) {
       let duration: number;
       let isTone: boolean = false;
-
       switch (symbol) {
         case '.':
           duration = timing.dotLength;
@@ -237,7 +299,21 @@ export struct MorseCodeConverter {
 
       if (duration > 0) {
         const numSamples = Math.floor(duration / 1000 * sampleRate);
-        this.generateSymbolAudio(view, sampleOffset, numSamples, sampleRate, amplitude, isTone);
+
+        // 为每个符号计算频率（如果开启了随机音调）
+        let symbolFrequency = this.frequency;
+        if (isTone && this.isRandomFrequencyEnabled && this.currentDirection !== 0) {
+          // 基本大小为5Hz，范围为50Hz，所以最大偏移量为50Hz
+          const maxOffset = 50;
+          // 计算本次符号的随机偏移量（5Hz的倍数，不超过50Hz）
+          const randomOffset = 5 + Math.floor(Math.random() * (maxOffset / 5)) * 5;
+          // 应用固定方向
+          symbolFrequency = this.frequency + (this.currentDirection * randomOffset);
+          // 确保频率在合理范围内
+          symbolFrequency = Math.max(300, Math.min(1200, symbolFrequency));
+        }
+
+        this.generateSymbolAudio(view, sampleOffset, numSamples, sampleRate, amplitude, isTone, symbolFrequency);
         sampleOffset += numSamples;
       }
     }
@@ -253,19 +329,19 @@ export struct MorseCodeConverter {
     numSamples: number,
     sampleRate: number,
     amplitude: number,
-    isTone: boolean
+    isTone: boolean,
+    frequency: number
   ): void {
     const byteOffset = sampleOffset * 4;
-
     for (let i = 0; i < numSamples; i++) {
       const value = isTone
-        ? amplitude * Math.sin(2 * Math.PI * this.frequency * i / sampleRate)
+        ? amplitude * Math.sin(2 * Math.PI * frequency * i / sampleRate)
         : 0;
       view.setFloat32(byteOffset + i * 4, value, true);
     }
   }
 
-  // writeData事件回调
+  // writeData事件回调（根据原始示例优化）
   private writeDataCallback = (buffer: ArrayBuffer): audio.AudioDataCallbackResult => {
     if (!this.fullPcmData) {
       console.log('没有PCM数据可提供');
@@ -311,7 +387,7 @@ export struct MorseCodeConverter {
     return audio.AudioDataCallbackResult.INVALID;
   };
 
-  // 完成播放处理
+  // 完成播放处理（根据原始示例优化）
   private finishPlayback(): void {
     // 确保只执行一次完成操作
     if (this.isPlaybackComplete) return;
@@ -330,12 +406,16 @@ export struct MorseCodeConverter {
     if (this.audioRenderer) {
       this.audioRenderer.off('writeData');
     }
+
+    // 清除定时器
+    this.clearTimer();
   }
 
-  // 播放摩尔斯电码音频
-  // 播放摩尔斯电码音频 - 修改版
-  async playMorseCode() {
-    console.log('开始播放摩尔斯电码');
+  // 播放内容（根据原始示例优化）
+  // 播放内容（修改：固定变调方向和基本大小）
+  // 播放内容（修改：确定固定变调方向，每个符号独立随机变化）
+  async playContent() {
+    console.log('开始播放内容');
 
     if (!this.audioRenderer) {
       console.error('音频渲染器未初始化');
@@ -343,7 +423,7 @@ export struct MorseCodeConverter {
       return;
     }
 
-    if (this.morseCode === '') {
+    if (this.currentContent === '') {
       console.error('没有可播放的内容');
       this.statusMessage = '无可播放内容';
       return;
@@ -366,6 +446,18 @@ export struct MorseCodeConverter {
         }
       }
 
+      // 如果开启随机音调，确定本次播放的固定变调方向
+      if (this.isRandomFrequencyEnabled) {
+        // 随机选择变调方向（-1 或 1）
+        this.currentDirection = Math.random() > 0.5 ? 1 : -1;
+        console.log(`本次播放固定变调方向: ${this.currentDirection === 1 ? '向上' : '向下'}`);
+      } else {
+        this.currentDirection = 0;
+      }
+
+      // 重置答案提交状态
+      this.isAnswerSubmitted = false;
+
       // 生成完整的PCM数据
       console.log('生成PCM音频数据');
       this.fullPcmData = this.generateFullPcmData();
@@ -386,14 +478,26 @@ export struct MorseCodeConverter {
       this.statusMessage = '播放中...';
       console.log('播放开始');
 
+      // 记录开始时间并启动定时器
+      this.startTime = new Date().getTime();
+      this.elapsedTime = 0;
+      this.elapsedTimeDisplay = '0秒';
+
+      // 启动定时器，每秒更新用时
+      this.clearTimer();
+      this.timerId = setInterval(() => {
+        const currentTime = new Date().getTime();
+        this.elapsedTime = Math.floor((currentTime - this.startTime) / 1000);
+        this.elapsedTimeDisplay = `${this.elapsedTime}秒`;
+      }, 1000);
+
     } catch (error) {
       console.error('播放失败:', error);
       this.statusMessage = '播放失败';
     }
   }
 
-  // 停止播放
-  // 停止播放 - 修改版
+  // 停止播放（根据原始示例优化）
   async stopPlayback() {
     console.log('停止播放');
 
@@ -425,8 +529,7 @@ export struct MorseCodeConverter {
     console.log('播放已停止');
   }
 
-  // 释放音频渲染器
-  // 释放音频渲染器 - 修改版
+  // 释放音频渲染器（根据原始示例优化）
   async releaseAudioRenderer() {
     console.log('释放音频渲染器');
 
@@ -435,15 +538,8 @@ export struct MorseCodeConverter {
 
     if (this.audioRenderer) {
       try {
-        this.stateChangeCallback = (state: audio.AudioState) => {
-          console.log('音频渲染器状态变化:', this.currentAudioState, '->', state);
-          this.currentAudioState = state;
-
-          // 根据状态变化执行相应操作
-          this.handleStateChange(state);
-        };
         // 移除事件监听器
-        this.audioRenderer.on('stateChange', this.stateChangeCallback);
+        this.audioRenderer.off('stateChange');
         this.audioRenderer.off('writeData');
 
         // 检查当前状态，只有在非RELEASED状态下才调用release
@@ -461,145 +557,223 @@ export struct MorseCodeConverter {
     }
   }
 
-  // 转换文本为摩尔斯电码
-  convertToMorse() {
-    if (this.inputText.trim() === '') {
-      promptAction.showToast({ message: '请输入文本', duration: 2000 });
+  // 生成新的随机内容
+  generateNewContent() {
+    let newContent = '';
+    if (this.mode === 'word') {
+      const randomIndex = Math.floor(Math.random() * WORD_LIST.length);
+      newContent = WORD_LIST[randomIndex];
+    } else {
+      const randomIndex = Math.floor(Math.random() * SENTENCE_TEMPLATES.length);
+      newContent = SENTENCE_TEMPLATES[randomIndex];
+    }
+    this.currentContent = newContent;
+    this.correctAnswer = newContent;
+    this.userInput = '';
+    this.accuracy = 0;
+    this.elapsedTime = 0;
+    this.elapsedTimeDisplay = '0秒';
+    this.morseCodeOfAnswer = this.convertToMorseString(newContent);
+    this.isAnswerSubmitted = false;
+    this.statusMessage = '新内容已生成，点击播放';
+    console.log('生成新内容:', newContent);
+  }
+
+  // 将文本转换为摩尔斯电码字符串
+  convertToMorseString(text: string): string {
+    let morseString = '';
+    const upperText = text.toUpperCase();
+    for (let i = 0; i < upperText.length; i++) {
+      const char = upperText[i];
+      if (char === ' ') {
+        morseString += '/ ';
+      } else if (MORSE_CODE_MAP[char]) {
+        morseString += MORSE_CODE_MAP[char] + ' ';
+      } else {
+        morseString += '?? ';
+      }
+    }
+    return morseString.trim();
+  }
+
+  // 检查用户输入
+  async checkAnswer() {
+    if (this.userInput.trim() === '') {
+      promptAction.showToast({ message: '请输入内容', duration: 2000 });
       return;
     }
 
-    this.morseCode = '';
-    this.statusMessage = '转换中...';
+    // 停止定时器
+    this.clearTimer();
 
-    const text = this.inputText.toUpperCase();
+    // 标记已提交答案
+    this.isAnswerSubmitted = true;
 
-    for (let i = 0; i < text.length; i++) {
-      const char = text[i];
+    // 计算所用时间
+    const endTime = new Date().getTime();
+    this.elapsedTime = Math.floor((endTime - this.startTime) / 1000);
+    this.elapsedTimeDisplay = `${this.elapsedTime}秒`;
 
-      if (char === ' ') {
-        this.morseCode += '/ ';
-        continue;
-      }
+    // 比较用户输入和正确答案
+    const userText = this.userInput.toUpperCase().trim();
+    const correctText = this.correctAnswer.toUpperCase().trim();
+    let correctCount = 0;
+    const userWords = userText.split(/\s+/);
+    const correctWords = correctText.split(/\s+/);
 
-      if (MORSE_CODE_MAP[char]) {
-        const morseChar = MORSE_CODE_MAP[char];
-        for (let j = 0; j < morseChar.length; j++) {
-          this.morseCode += morseChar[j];
-          if (j < morseChar.length - 1) {
-            this.morseCode += ' ';
-          }
-        }
-
-        if (i < text.length - 1 && text[i + 1] !== ' ') {
-          this.morseCode += '  ';
-        }
-      } else {
-        this.morseCode += '?? ';
+    for (let i = 0; i < Math.min(userWords.length, correctWords.length); i++) {
+      if (userWords[i] === correctWords[i]) {
+        correctCount++;
       }
     }
 
-    this.morseCode = this.morseCode.trim();
-    this.statusMessage = '转换完成，可点击播放';
+    this.accuracy = Math.round((correctCount / correctWords.length) * 100);
+    this.statusMessage = `检查完成，正确率: ${this.accuracy}%`;
+
+    // 使用showDialog显示结果
+    try {
+      await promptAction.showDialog({
+        title: '答题结果',
+        message: `正确答案: ${this.correctAnswer}\n\n` +
+          `摩尔斯电码: ${this.morseCodeOfAnswer}\n\n` +
+          `您的输入: ${this.userInput}\n\n` +
+          `正确率: ${this.accuracy}%\n\n` +
+          `用时: ${this.elapsedTimeDisplay}`,
+        buttons: [
+          {
+            text: '确定',
+            color: '#007DFF'
+          }
+        ]
+      });
+    } catch (error) {
+      console.error('显示结果弹窗失败:', error);
+    }
+
+    // 显示简短提示
+    promptAction.showToast({
+      message: `已提交答案，正确率: ${this.accuracy}%`,
+      duration: 2000
+    });
   }
 
-  // 清空所有内容
-  clearAll() {
-    this.inputText = '';
-    this.morseCode = '';
-    this.stopPlayback();
-    this.statusMessage = '已清空';
+  // 切换模式
+  switchMode(newMode: string) {
+    this.mode = newMode;
+    this.generateNewContent();
+    promptAction.showToast({
+      message: `已切换到${newMode === 'word' ? '单词' : '句子'}模式`,
+      duration: 2000
+    });
   }
 
   build() {
     NavDestination() {
-      Column({ space: 20 }) {
-        Text('摩尔斯电码转换器')
+      Column({ space: 10 }) {
+        Text('摩尔斯电码听力训练')
           .fontSize(24)
           .fontWeight(FontWeight.Bold)
-          .margin({ top: 20, bottom: 10 })
+          .margin({ top: 10, bottom: 5 })
 
         Text(this.statusMessage)
           .fontSize(14)
           .fontColor(Color.Gray)
-          .margin({ bottom: 10 })
+          .margin({ bottom: 5 })
 
-        TextInput({ placeholder: '输入要转换的文本（字母、数字、符号）', text: this.inputText })
-          .width('90%')
-          .height(60)
-          .onChange((value: string) => {
-            this.inputText = value;
-          })
-
-        Row({ space: 15 }) {
-          Button('转换为摩尔斯电码', { type: ButtonType.Capsule })
-            .width(160)
+        // 模式选择
+        Row({ space: 10 }) {
+          Button('单词模式', { type: ButtonType.Capsule })
+            .width(120)
+            .backgroundColor(this.mode === 'word' ? Color.Blue : Color.Gray)
             .onClick(() => {
-              this.convertToMorse();
+              this.switchMode('word');
             })
-
-          Button('清空', { type: ButtonType.Capsule })
-            .width(80)
+          Button('句子模式', { type: ButtonType.Capsule })
+            .width(120)
+            .backgroundColor(this.mode === 'sentence' ? Color.Blue : Color.Gray)
             .onClick(() => {
-              this.clearAll();
+              this.switchMode('sentence');
             })
         }
+        .margin({ bottom: 5 })
 
-        if (this.morseCode) {
-          Column() {
-            Text('摩尔斯电码:')
-              .fontSize(16)
-              .fontWeight(FontWeight.Medium)
-              .margin({ bottom: 5 })
-
-            Text(this.morseCode)
-              .fontSize(18)
-              .width('90%')
-              .textAlign(TextAlign.Center)
-              .padding(15)
-              .backgroundColor(Color.White)
-              .borderRadius(8)
-              .border({ width: 1, color: Color.Gray })
-          }
-          .width('100%')
-          .margin({ top: 10, bottom: 10 })
-        }
-
-        Button(this.isPlaying ? '停止播放' : '播放音频', { type: ButtonType.Capsule })
-          .width(150)
-          .height(45)
-          .backgroundColor(this.isPlaying ? Color.Red : Color.Blue)
-          .opacity(this.morseCode ? 1 : 0.5)
-          .enabled(!!this.morseCode)
+        // 生成新内容按钮
+        Button('生成新内容', { type: ButtonType.Capsule })
+          .width(160)
           .onClick(() => {
-            if (this.isPlaying) {
-              this.stopPlayback();
-            } else if (this.morseCode) {
-              this.playMorseCode();
-            }
+            this.generateNewContent();
           })
-          .margin({ top: 10, bottom: 10 })
+          .margin({ bottom: 5 })
 
-        Text(`频率: ${this.frequency}Hz`)
-          .fontSize(16)
-          .fontWeight(FontWeight.Medium)
+        // 播放控制和用时显示
+        Row({ space: 10 }) {
+          Button(this.isPlaying ? '停止播放' : '播放内容', { type: ButtonType.Capsule })
+            .width(120)
+            .height(40)
+            .backgroundColor(this.isPlaying ? Color.Red : Color.Green)
+            .onClick(() => {
+              if (this.isPlaying) {
+                this.stopPlayback();
+              } else {
+                this.playContent();
+              }
+            })
+          Text(`用时: ${this.elapsedTimeDisplay}`)
+            .fontSize(16)
+            .fontColor(Color.Black)
+        }
+        .margin({ bottom: 5 })
 
+        // 随机音调开关
+        Row({ space: 10 }) {
+          Text('随机音调:')
+            .fontSize(16)
+          Toggle({ type: ToggleType.Switch, isOn: this.isRandomFrequencyEnabled })
+            .onChange((isOn: boolean) => {
+              this.isRandomFrequencyEnabled = isOn;
+              this.statusMessage = isOn ? '随机音调已开启' : '随机音调已关闭';
+            })
+        }
+        .margin({ bottom: 5 })
+
+        // 用户输入
+        TextInput({ placeholder: '输入您听到的内容', text: this.userInput })
+          .width('90%')
+          .height(50)
+          .onChange((value: string) => {
+            this.userInput = value;
+          })
+          .margin({ bottom: 5 })
+
+        // 提交答案按钮
+        Button('提交答案', { type: ButtonType.Capsule })
+          .width(120)
+          .onClick(() => {
+            this.checkAnswer();
+          })
+          .margin({ bottom: 5 })
+
+        // 音调控制
+        Row({ space: 10 }) {
+          Text(`频率: ${this.frequency}Hz`)
+            .fontSize(16)
+        }
         Slider({
           value: this.frequency,
           min: 300,
           max: 1200,
-          step: 50,
+          step: 10,
           style: SliderStyle.OutSet
         })
           .width('85%')
           .onChange((value: number) => {
             this.frequency = value;
           })
+          .margin({ bottom: 5 })
 
+        // 速度控制
         Text(`速度: ${this.wpm} WPM (单词/分钟)`)
           .fontSize(16)
-          .fontWeight(FontWeight.Medium)
-          .margin({ top: 15 })
-
         Slider({
           value: this.wpm,
           min: 5,
@@ -611,19 +785,15 @@ export struct MorseCodeConverter {
           .onChange((value: number) => {
             this.wpm = value;
           })
+          .margin({ bottom: 5 })
 
-        Text(`当前时间参数: 点=${this.calculateDotLength(this.wpm).toFixed(0)}ms, 划=${(3 *
-        this.calculateDotLength(this.wpm)).toFixed(0)}ms`)
-          .fontSize(12)
-          .fontColor(Color.Gray)
-          .margin({ top: 5 })
-
-        Text('使用说明: 输入文本后点击转换，然后播放音频。支持字母、数字和常用符号。')
+        // 使用说明
+        Text('使用说明: 选择模式后生成内容，播放并输入听到的内容。支持调速和随机音调。')
           .fontSize(12)
           .fontColor(Color.Gray)
           .width('85%')
           .textAlign(TextAlign.Center)
-          .margin({ top: 20 })
+          .margin({ top: 5 })
       }
       .width('100%')
       .height('100%')

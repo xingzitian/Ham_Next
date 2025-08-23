@@ -147,17 +147,26 @@ export struct base_info_3 {
       List({ space: 10 }){
         ForEach(this.phoneticAlphabet,(item:phonetic)=>{
           ListItem(){
-            Text(item.letter+'  '+item.phonetic)
-              .padding({left:10})
-              .borderRadius(15)
-              .backgroundColor('#ffffffff')
-              .width('100%')
-              .height(50)
-              .fontSize(20)
+            Row(){
+              Text(item.letter+'  '+item.phonetic)
+                .padding({left:10})
+                .borderRadius(15)
+                .backgroundColor('#ffffffff')
+                .width('80%')
+                .height(50)
+                .fontSize(20)
+              Text(){
+                SymbolSpan($r('sys.symbol.play_circle_fill'))
+                  .fontWeight(FontWeight.Normal)
+                  .renderingStrategy(SymbolRenderingStrategy.SINGLE)
+                  .fontColor(['#ff64bb5c', Color.White])
+                  .fontSize(48)
+              }
               .onClick(() => {
                 this.PlaySoundPool(item.phonetic+'.mp3')
               })
               .id('playSoundPoolButton')
+            }
           }
         })
       }

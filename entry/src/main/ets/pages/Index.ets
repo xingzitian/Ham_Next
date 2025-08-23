@@ -4,11 +4,13 @@ import { register } from './user/register'
 import { log_search } from './log/search_log_list'
 import { log_info } from './log/log_info'
 import { about } from './about/about'
-import { base_info } from './cw/base_info'
+import { base_info,base_info2 } from './cw/base_info'
 import { base_info_1, base_info_2, base_info_3 } from './cw/cq_info'
 import { MaidenheadLocator } from './cw/base_resource'
 import { MorseCodeConverter } from './cw/MorseCodeConverter'
 import { MorseMinimalPractice } from './cw/MorseMinimalPractice'
+
+import {MorseTraining} from './cw/MorseTraining'
 
 import { beian_web_page, private_cq_web_page, private_huawei_web_page, } from './about/Web_page'
 
@@ -64,10 +66,12 @@ struct Index {
       private_cq_web_page()
     }else if (name === "about") {
       about()
-    }else if (name === "base_info_1") {
-      base_info_1()
     }else if (name === "base_info") {
       base_info()
+    }else if (name === "base_info2") {
+      base_info2()
+    }else if (name === "base_info_1") {
+      base_info_1()
     }else if (name === "base_info_2") {
       base_info_2()
     }else if (name === "base_info_3") {
@@ -76,8 +80,12 @@ struct Index {
       MorseCodeConverter()
     }else if (name === "MorseMinimalPractice") {
       MorseMinimalPractice()
+    }else if (name === "MorseTraining") {
+      MorseTraining()
     }
   }
+
+
   build() {
     Navigation(this.index) {
       Column(){
@@ -128,7 +136,6 @@ struct Index {
             Column({ space: 5 }){
               Divider().strokeWidth(5).color('#fff1f3f5')
               Text('基础知识')
-                .borderRadius(15)
                 .width('100%')
                 .height(50)
                 .fontSize(20)
@@ -169,25 +176,14 @@ struct Index {
                 Text(this.locator)
               }
               Divider().strokeWidth(2).color('#fff1f3f5')
-              Text('文字转摩尔斯电码音频')
-                .borderRadius(15)
+              Text('摩尔斯电码工具及训练')
                 .width('100%')
                 .height(50)
                 .fontSize(20)
                 .onClick(() => {
-                  this.index.pushPath({ name: 'MorseCodeConverter' })
+                  this.index.pushPath({ name: 'base_info2' })
                 })
-              Divider().strokeWidth(3).color('#fff1f3f5')
-              Text('摩尔斯电码练习')
-                .borderRadius(15)
-                .width('100%')
-                .height(50)
-                .fontSize(20)
-                .onClick(() => {
-                  this.index.pushPath({ name: 'MorseMinimalPractice' })
-                })
-              Divider().strokeWidth(3).color('#fff1f3f5')
-
+              Divider().strokeWidth(2).color('#fff1f3f5')
             }
             .height('100%')
             .width("90%")
