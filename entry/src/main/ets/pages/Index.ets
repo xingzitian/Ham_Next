@@ -4,14 +4,14 @@ import { register } from './user/register'
 import { log_search } from './log/search_log_list'
 import { log_info } from './log/log_info'
 import { about } from './about/about'
-import { base_info,base_info2 } from './cw/base_info'
+import { base_index1,base_index2,base_index3 } from './cw/base_info'
 import { base_info_1, base_info_2, base_info_3 } from './cw/cq_info'
 import { MaidenheadLocator } from './cw/base_resource'
 import { MorseCodeConverter } from './cw/MorseCodeConverter'
 import { MorseMinimalPractice } from './cw/MorseMinimalPractice'
 
 import {MorseTraining} from './cw/MorseTraining'
-
+import {sstv_1} from './cw/sstv/1'
 import { beian_web_page, private_cq_web_page, private_huawei_web_page, } from './about/Web_page'
 
 import { sceneMap } from '@kit.MapKit'
@@ -66,10 +66,12 @@ struct Index {
       private_cq_web_page()
     }else if (name === "about") {
       about()
-    }else if (name === "base_info") {
-      base_info()
-    }else if (name === "base_info2") {
-      base_info2()
+    }else if (name === "base_index1") {
+      base_index1()
+    }else if (name === "base_index2") {
+      base_index2()
+    }else if (name === "base_index3") {
+      base_index3()
     }else if (name === "base_info_1") {
       base_info_1()
     }else if (name === "base_info_2") {
@@ -82,6 +84,8 @@ struct Index {
       MorseMinimalPractice()
     }else if (name === "MorseTraining") {
       MorseTraining()
+    }else if (name === "sstv_1") {
+      sstv_1()
     }
   }
 
@@ -140,7 +144,7 @@ struct Index {
                 .height(50)
                 .fontSize(20)
                 .onClick(() => {
-                  this.index.pushPath({ name: 'base_info' })
+                  this.index.pushPath({ name: 'base_index1' })
                 })
               Divider().strokeWidth(3).color('#fff1f3f5')
               Text('梅登海德网格定位系统(点我选点计算)')
@@ -181,7 +185,15 @@ struct Index {
                 .height(50)
                 .fontSize(20)
                 .onClick(() => {
-                  this.index.pushPath({ name: 'base_info2' })
+                  this.index.pushPath({ name: 'base_index2' })
+                })
+              Divider().strokeWidth(2).color('#fff1f3f5')
+              Text('SSTV(慢扫描电视)工具')
+                .width('100%')
+                .height(50)
+                .fontSize(20)
+                .onClick(() => {
+                  this.index.pushPath({ name: 'base_index3' })
                 })
               Divider().strokeWidth(2).color('#fff1f3f5')
             }
