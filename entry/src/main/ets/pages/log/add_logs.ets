@@ -1,7 +1,6 @@
 import { http_log_add, tx_log } from '../http_server/httpService';
 import { sceneMap } from '@kit.MapKit';
-import { LoadingDialog, PromptAction } from '@kit.ArkUI';
-
+import { LoadingDialog, promptAction, PromptAction } from '@kit.ArkUI';
 //单文件项目标识add_logs
 //完成
 
@@ -76,15 +75,25 @@ export struct add_log {
       console.log(String(tx_log))
       const response =
         await http_log_add.httpRequest(tx_log, token);
-
-
       setTimeout(() => {
         this.dialogControllerProgress.close()
-        if (response.success === true) {
-          this.index.pop()
-        }
       }, 500);
+      if (response.success === true) {
+        this.promptAction.showToast({
+          message:'提交成功'
+        });
+        this.index.pop()
+      }
+
     } catch (error) {
+      setTimeout(() => {
+        this.dialogControllerProgress.close()
+      }, 500);
+      if(error===400){
+        this.promptAction.showToast({
+          message:'参数提交不完整，请重新提交'
+        });
+      }
     }
   }
 
@@ -142,7 +151,7 @@ export struct add_log {
           }
         }
         .width('100%')
-        .backgroundColor('#ffe5e5ea')
+        .backgroundColor($r('sys.color.background_tertiary'))
 
         Row() {
           Text('频率：')

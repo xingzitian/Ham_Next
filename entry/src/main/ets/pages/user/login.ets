@@ -1,5 +1,5 @@
 import { http_id } from '../http_server/httpService';
-import { LoadingDialog, PromptAction } from '@kit.ArkUI';
+import { LoadingDialog, promptAction, PromptAction } from '@kit.ArkUI';
 
 //单文件项目标识login
 //完成
@@ -28,6 +28,9 @@ export struct login {
       setTimeout(() => {
         this.dialogControllerProgress.close()
         if (response.success === true) {
+          this.promptAction.showToast({
+            message:'登录成功'
+          });
           this.token=response.data.token
           this.callsign=response.data.user.callsign
           console.log("获取到的呼号："+this.callsign)
@@ -36,6 +39,14 @@ export struct login {
       }, 500);
 
     } catch (error) {
+      setTimeout(() => {
+        this.dialogControllerProgress.close()
+      }, 500);
+      if(error===401){
+        this.promptAction.showToast({
+          message:'登录失败，呼号或密码错误'
+        });
+      }
     }
   }
 

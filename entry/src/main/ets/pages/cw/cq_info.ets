@@ -13,9 +13,9 @@ export struct base_info_1 {
         ForEach(this.morseCodeTable,(item:cw)=>{
           ListItem(){
             Text(item.字符+'  '+item.电码)
+              .backgroundColor($r('sys.color.comp_background_primary'))
               .padding({left:10})
               .borderRadius(15)
-              .backgroundColor('#ffffffff')
               .width('100%')
               .height(50)
               .fontSize(20)
@@ -24,8 +24,8 @@ export struct base_info_1 {
       }
       .width("90%")
     }
-    .backgroundColor($r('sys.color.container_modal_unfocus_background'))
     .title('字母解释法')
+    .backgroundColor($r('sys.color.container_modal_unfocus_background'))
     .onBackPressed(() => {
       this.index.pop() // 弹出路由栈栈顶元素
       return true
@@ -45,7 +45,7 @@ export struct base_info_2 {
             Text(item.Q简语+'  '+item.含义)
               .padding({left:10})
               .borderRadius(15)
-              .backgroundColor('#ffffffff')
+              .backgroundColor($r('sys.color.comp_background_primary'))
               .width('100%')
               .height(50)
               .fontSize(20)
@@ -151,7 +151,7 @@ export struct base_info_3 {
               Text(item.letter+'  '+item.phonetic)
                 .padding({left:10})
                 .borderRadius(15)
-                .backgroundColor('#ffffffff')
+                .backgroundColor($r('sys.color.comp_background_primary'))
                 .width('80%')
                 .height(50)
                 .fontSize(20)

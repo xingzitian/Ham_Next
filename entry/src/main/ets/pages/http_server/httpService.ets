@@ -8,7 +8,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 //2.reject是返回失败的方法
 //3.初始状态是pending，等待中，进行异步的操作
 
-let url_main: string = 'http://192.168.3.132:8000/api/';
+let url_main: string = 'http://cq.zhangyulin.top:8000/api/';
 let HttpRequestOptions: http.HttpRequestOptions = {};
 let mode_url = '';
 
@@ -130,14 +130,13 @@ class http_id {
         HttpRequestOptions,
         (err: BusinessError, data: http.HttpResponse) => {
           if (!err) {
-            hilog.info(0x0001, "http_login：", "http_login:%{public}i", data.responseCode);
-            const responseObj: object = JSON.parse(data.result + '');
-            promptAction.showToast({
-              message: responseObj["message"]
-            });
-
+            if(data.responseCode === 409 || data.responseCode === 401 || data.responseCode === 400){
+              reject(data.responseCode)
+              hilog.error(0x0001, "http_login", "http_login:%{public}i", data.responseCode);
+            }
             if (data.responseCode === 200 ||data.responseCode === 201) {
               const res: res_user = JSON.parse(data.result + '');
+              hilog.info(0x0001, "http_login", "http_login:%{public}i", data.responseCode);
               resolve(res);
             } else {
               reject("error:出现未知错误")
@@ -185,17 +184,13 @@ class http_log_add {
         HttpRequestOptions,
         (err: BusinessError, data: http.HttpResponse) => {
           if (!err) {
-            // data.header 为 HTTP 响应头，可根据业务需要进行解析
-            hilog.info(0x0001, "http_add_log：", "log_interface_httpcode:%{public}i", data.responseCode);
             console.log(data.result as string)
-            const responseObj: res_add_log = JSON.parse(data.result + '');
             if (data.responseCode !== 201) {
-              reject(responseObj.message)
-              promptAction.showToast({
-                message:responseObj.message
-              });
+              hilog.error(0x0001, "http_add_log", "log_interface_httpcode:%{public}i", data.responseCode);
+              reject(data.responseCode)
             }
             if (data.responseCode === 201) {
+              hilog.info(0x0001, "http_add_log", "log_interface_httpcode:%{public}i", data.responseCode);
               console.log('http_add_log：' + data.result);
               const responseObj: res_add_log = JSON.parse(data.result + '');
               resolve(responseObj);
@@ -237,17 +232,13 @@ class http_list_logs {
         HttpRequestOptions,
         (err: BusinessError, data: http.HttpResponse) => {
           if (!err) {
-            // data.header 为 HTTP 响应头，可根据业务需要进行解析
-            hilog.info(0x0001, "http_list_logs：", "http_list_logs_httpcode:%{public}i", data.responseCode);
             console.log(data.result as string)
-            const responseObj: res_log_list = JSON.parse(data.result + '');
             if (data.responseCode !== 200) {
-              reject(responseObj.message)
-              promptAction.showToast({
-                message: responseObj.message
-              });
+              hilog.error(0x0001, "http_list_logs", "http_list_logs:%{public}i", data.responseCode);
+              reject(data.responseCode)
             }
             if (data.responseCode === 200) {
+              hilog.info(0x0001, "http_list_logs", "http_list_logs:%{public}i", data.responseCode);
               console.log('http_list_logs：' + data.result);
               const responseObj: res_log_list = JSON.parse(data.result + '');
               resolve(responseObj);
@@ -284,16 +275,15 @@ class http_once_logs {
         (err: BusinessError, data: http.HttpResponse) => {
           if (!err) {
             // data.header 为 HTTP 响应头，可根据业务需要进行解析
-            hilog.info(0x0001, "http_once_logs：", "teams_interface_httpcode:%{public}i", data.responseCode);
+
             console.log(data.result as string)
             const responseObj: res_once_log = JSON.parse(data.result + '');
             if (data.responseCode !== 200) {
+              hilog.error(0x0001, "http_once_logs", "http_once_logs:%{public}i", data.responseCode);
               reject(responseObj.message)
-              promptAction.showToast({
-                message: responseObj.message
-              });
             }
             if (data.responseCode === 200) {
+              hilog.info(0x0001, "http_once_logs", "http_once_logs:%{public}i", data.responseCode);
               console.log('http_once_logs：' + data.result);
               const responseObj: res_once_log = JSON.parse(data.result + '');
               resolve(responseObj);

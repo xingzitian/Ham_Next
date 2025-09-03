@@ -1,7 +1,7 @@
 // MorseTraining.ets
 import audio from '@ohos.multimedia.audio';
-import promptAction from '@ohos.promptAction';
 
+import { promptAction, PromptAction } from '@kit.ArkUI';
 // 摩尔斯电码映射表
 const MORSE_CODE_MAP: Record<string, string> = {
   'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
@@ -41,6 +41,8 @@ interface MorseTimingParameters {
 
 @Component
 export struct MorseTraining {
+  private uiContext: UIContext = this.getUIContext();
+  private promptAction: PromptAction = this.uiContext.getPromptAction();
   @Consume('index') index: NavPathStack;
 
   // 状态变量
@@ -621,7 +623,7 @@ export struct MorseTraining {
   // 检查用户输入
   async checkAnswer() {
     if (this.userInput.trim() === '') {
-      promptAction.showToast({ message: '请输入内容', duration: 2000 });
+      this.promptAction.showToast({ message: '请输入内容', duration: 2000 });
       return;
     }
 
@@ -673,7 +675,7 @@ export struct MorseTraining {
     }
 
     // 显示简短提示
-    promptAction.showToast({
+    this.promptAction.showToast({
       message: `已提交答案，正确率: ${this.accuracy}%`,
       duration: 2000
     });
@@ -683,7 +685,7 @@ export struct MorseTraining {
   switchMode(newMode: string) {
     this.mode = newMode;
     this.generateNewContent();
-    promptAction.showToast({
+    this.promptAction.showToast({
       message: `已切换到${newMode === 'word' ? '单词' : '句子'}模式`,
       duration: 2000
     });
@@ -819,7 +821,6 @@ export struct MorseTraining {
       }
       .width('100%')
       .height('100%')
-      .backgroundColor('#F8F9FA')
       .alignItems(HorizontalAlign.Center)
       .padding(10)
     }

@@ -6,12 +6,12 @@
         "type": "HarmonyOS",
         "material": {
           "storeFile": "C:/Users/31629/Desktop/hw/next/证书以及发布相关文件/key_release_dada.p12",
-          "storePassword": "00000022AA6C2575C82B7FEBE976DBCF5D7F40364393E83220B34DC8A18A64F303A1D03C65D2653A738FE0C9904B99BAB112",
+          "storePassword": "00000022482F3AAC9C37B508BCD0694435DDB19DB3387449D816CE90B8BDEA4AE9AC167DE2119197B76AB868B4E3D1733E19",
           "keyAlias": "key_release_dada",
-          "keyPassword": "000000227D0357BCEB61F6D1873553862028DB953B2925A6C71AAF26457744DB0298FBF3983D88BCCF5D0BE9F5FE309EB6DE",
+          "keyPassword": "000000220C74C446EF54B24DED713C83E5FC1667221C0C2FBE15ADC4968197207CD4C7F73C15B92E2AE558F78FADDBC15FED",
           "signAlg": "SHA256withECDSA",
-          "profile": "C:/Users/31629/Desktop/hw/next/证书以及发布相关文件/debug_file/debug_cqDebug.p7b",
-          "certpath": "C:/Users/31629/Desktop/hw/next/证书以及发布相关文件/debug_file/debug.cer"
+          "profile": "C:/Users/31629/Desktop/hw/next/证书以及发布相关文件/release_file/up_cqRelease.p7b",
+          "certpath": "C:/Users/31629/Desktop/hw/next/证书以及发布相关文件/release_file/xingzitian.release.cer"
         }
       }
     ],
@@ -19,8 +19,8 @@
       {
         "name": "default",
         "signingConfig": "default",
-        "targetSdkVersion": "5.0.3(15)",
-        "compatibleSdkVersion": "5.0.3(15)",
+        "targetSdkVersion": "5.0.5(17)",
+        "compatibleSdkVersion": "5.0.5(17)",
         "runtimeOS": "HarmonyOS",
         "buildOption": {
           "strictMode": {

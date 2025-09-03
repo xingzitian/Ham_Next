@@ -8,13 +8,8 @@ export struct about {
         Image($r('app.media.cq_logo_update'))
           .height(100)
           .margin({ top: 40, bottom: 10 });
-        Text('版本信息：' + '1.6.0')
+        Text('版本信息：' + '1.0.6')
           .fontSize(30);
-        Text('隐私政策')
-          .fontSize(30)
-          .onClick(() => {
-            this.index.pushPath({ name: 'private_cq_web_page' })
-          })
       }
     }
     .title('关于我们')

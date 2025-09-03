@@ -7,7 +7,6 @@
     "deviceTypes": [
       "phone",
       "tablet",
-      "2in1"
     ],
     "deliveryWithInstall": true,
     "installationFree": false,
@@ -17,9 +16,7 @@
         "name": "EntryAbility",
         "srcEntry": "./ets/entryability/EntryAbility.ets",
         "description": "$string:EntryAbility_desc",
-        "icon": "$media:cq_logo_update",
-        "label": "$string:EntryAbility_label",
-        "startWindowIcon": "$media:cq_logo_update",
+        "startWindowIcon": "$media:icon_startwindow",
         "startWindowBackground": "$color:start_window_background",
         "exported": true,
         "skills": [

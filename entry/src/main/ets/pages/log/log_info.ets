@@ -1,17 +1,11 @@
 import { http_once_logs, res_once_log } from '../http_server/httpService';
 
-import { LoadingDialog } from '@kit.ArkUI';
-import { common } from '@kit.AbilityKit';
-
+import { PromptAction } from '@kit.ArkUI';
 
 @Component
 export struct log_info {
-  context = getContext(this) as common.UIAbilityContext;
-  dialogControllerProgress: CustomDialogController = new CustomDialogController({
-    builder: LoadingDialog({
-      content: '操作中',
-    }),
-  })
+  private uiContext: UIContext = this.getUIContext();
+  private promptAction: PromptAction = this.uiContext.getPromptAction();
   //以下需要调用其他组件
   @Consume('index') index: NavPathStack;
   @StorageProp('token') token: string = '';
@@ -55,7 +49,12 @@ export struct log_info {
       //   destinationName: this.locationName,
       // }
     } catch (error) {
+      this.promptAction.showToast({
+        message: '进入失败',
+        duration: 2000
+      })
       this.index.pop()
+
       console.error('Error occurred during request:', error);
     }
   }
@@ -64,50 +63,51 @@ export struct log_info {
   build() {
     NavDestination() {
       Column({ space: 15 }) {
-        Text('日志时间(UTC时间)：'+this.log_info.data.timestamp)
-          .borderRadius(15)
-          .backgroundColor('#ffffffff')
-          .width('100%')
-          .height(50)
-          .fontSize(20)
+        Column(){
+          Text('日志时间(UTC时间)：')
+            .fontSize(20)
+          Text(this.log_info.data.timestamp)
+            .fontSize(20)
+        }
+        .borderRadius(15)
+        .backgroundColor($r('sys.color.comp_background_primary'))
+        .width('100%')
+        .height(50)
         Text('模式：'+this.log_info.data.mode)
           .borderRadius(15)
-          .backgroundColor('#ffffffff')
+          .backgroundColor($r('sys.color.comp_background_primary'))
           .width('100%')
           .height(50)
           .fontSize(20)
         Text('频率：'+this.log_info.data.frequency+'MHz')
           .borderRadius(15)
-          .backgroundColor('#ffffffff')
+          .backgroundColor($r('sys.color.comp_background_primary'))
           .width('100%')
           .height(50)
           .fontSize(20)
         Text('对方呼号：'+this.log_info.data.contactCallsign)
           .borderRadius(15)
-          .backgroundColor('#ffffffff')
+          .backgroundColor($r('sys.color.comp_background_primary'))
           .width('100%')
           .height(50)
           .fontSize(20)
-        Text('信号报告：')
+        Text('信号报告：'+'收方：' + this.log_info.data.receivedReport+'发方：' + this.log_info.data.sentReport)
+          .borderRadius(15)
+          .backgroundColor($r('sys.color.comp_background_primary'))
+          .width('100%')
+          .height(50)
           .fontSize(20)
-        Row() {
-          Text('收方：' + this.log_info.data.receivedReport)
+        Column(){
+          Text('备注：')
             .fontSize(20)
-          Text('收方：' + this.log_info.data.sentReport)
+          Text(this.log_info.data.notes)
             .fontSize(20)
         }
         .borderRadius(15)
-        .backgroundColor('#ffffffff')
+        .backgroundColor($r('sys.color.comp_background_primary'))
         .width('100%')
         .height(50)
-        Text('备注：')
-          .fontSize(20)
-        Text(this.log_info.data.notes)
-          .borderRadius(15)
-          .backgroundColor('#ffffffff')
-          .width('100%')
-          .height(50)
-          .fontSize(20)
+        .alignItems(HorizontalAlign.Start)
 
       }
       .alignItems(HorizontalAlign.Start)
@@ -116,7 +116,7 @@ export struct log_info {
     .backgroundColor($r('sys.color.container_modal_unfocus_background'))
     .title('日志详情')
     .onBackPressed(() => {
-      this.index.pop() // 弹出路由栈栈顶元素
+      this.index.pop()
       return true
     })
   }

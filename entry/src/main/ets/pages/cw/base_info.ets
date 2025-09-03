@@ -13,7 +13,7 @@ export struct base_index1 {
           .onClick(() => {
             this.index.pushPath({ name: 'base_info_1' })
           })
-        Divider().strokeWidth(3).color('#fff1f3f5')
+        Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
         Text('常见q短语')
           .width('100%')
           .height(50)
@@ -21,7 +21,7 @@ export struct base_index1 {
           .onClick(() => {
             this.index.pushPath({ name: 'base_info_2' })
           })
-        Divider().strokeWidth(3).color('#fff1f3f5')
+        Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
         Text('字母解释法')
           .borderRadius(15)
           .width('100%')
@@ -55,7 +55,7 @@ export struct base_index2 {
           .onClick(() => {
             this.index.pushPath({ name: 'MorseCodeConverter' })
           })
-        Divider().strokeWidth(3).color('#fff1f3f5')
+        Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
         Text('摩尔斯电码输入练习')
           .width('100%')
           .height(50)
@@ -63,7 +63,7 @@ export struct base_index2 {
           .onClick(() => {
             this.index.pushPath({ name: 'MorseMinimalPractice' })
           })
-        Divider().strokeWidth(3).color('#fff1f3f5')
+        Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
         Text('摩尔斯电码听力练习')
           .width('100%')
           .height(50)
@@ -96,14 +96,14 @@ export struct base_index3 {
           .onClick(() => {
             this.index.pushPath({ name: 'sstv_1' })
           })
-        Divider().strokeWidth(3).color('#fff1f3f5')
-        Text('SSTV解码')
-          .width('100%')
-          .height(50)
-          .fontSize(20)
-          .onClick(() => {
-            this.index.pushPath({ name: 'MorseMinimalPractice' })
-          })
+        Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
+        // Text('SSTV解码')
+        //   .width('100%')
+        //   .height(50)
+        //   .fontSize(20)
+        //   .onClick(() => {
+        //     this.index.pushPath({ name: 'MorseMinimalPractice' })
+        //   })
       }
       .width("90%")
     }

@@ -3,8 +3,8 @@ import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import { image } from '@kit.ImageKit';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import audio from '@ohos.multimedia.audio';
-import promptAction from '@ohos.promptAction';
 
+import { PromptAction } from '@kit.ArkUI';
 // 通道数据结构 - 修改为RGB通道
 interface ChannelData {
   gData: Uint8Array; // Green通道
@@ -27,6 +27,8 @@ interface ScanlineResult {
 
 @Component
 export struct sstv_1 {
+  private uiContext: UIContext = this.getUIContext();
+  private promptAction: PromptAction = this.uiContext.getPromptAction();
   // 状态变量
   @Consume('index') index: NavPathStack;
   @State selectedImage: image.PixelMap | undefined = undefined;
@@ -48,8 +50,8 @@ export struct sstv_1 {
   private readonly MARTIN_M1_SYNC_PULSE_DURATION: number = 4.862;
   private readonly MARTIN_M1_SYNC_PORCH_DURATION: number = 0.572;
   private readonly MARTIN_M1_SEPARATOR_PULSE_DURATION: number = 0.572;
-  private readonly MARTIN_M1_VIS_CODE: number = 0x28; // Martin M1 VIS码应为44 (0x2C)
-  private readonly MARTIN_M1_CHANNEL_SCAN_DURATION: number = 73.216;
+  private readonly MARTIN_M1_VIS_CODE: number = 0x2c; // Martin M1 VIS码应为44 (0x2C)
+  private readonly MARTIN_M1_CHANNEL_SCAN_DURATION: number = 146.432;
 
   // 从相册选择图片
   async getPictureFromAlbum(): Promise<void> {
@@ -85,7 +87,7 @@ export struct sstv_1 {
       this.statusMessage = '图片已选择，准备生成音频';
     } catch (error) {
       console.error("选择图片失败:", error);
-      promptAction.showToast({ message: '选择图片失败', duration: 2000 });
+      this.promptAction.showToast({ message: '选择图片失败', duration: 2000 });
       this.statusMessage = '选择图片失败';
     }
   }
@@ -786,7 +788,7 @@ export struct sstv_1 {
   // 开始生成和播放音频
   private async startAudioPlayback(): Promise<void> {
     if (!this.selectedImage) {
-      promptAction.showToast({ message: '请先选择图片', duration: 2000 });
+      this.promptAction.showToast({ message: '请先选择图片', duration: 2000 });
       return;
     }
 

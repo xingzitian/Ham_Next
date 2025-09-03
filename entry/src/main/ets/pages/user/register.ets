@@ -1,6 +1,6 @@
 import { http_id } from '../http_server/httpService';
 
-import { LoadingDialog, PromptAction } from '@kit.ArkUI';
+import { LoadingDialog, promptAction, PromptAction } from '@kit.ArkUI';
 
 //单文件项目标识register
 //完成
@@ -29,12 +29,25 @@ export struct register {
       setTimeout(() => {
         this.dialogControllerProgress.close()
         if (response.success === true) {
+          this.promptAction.showToast({
+            message:'注册成功'
+          });
           this.token=response.data.token
-          this.index.pop()
+          this.index.clear();
         }
       }, 500);
 
     } catch (error) {
+      setTimeout(() => {
+        this.dialogControllerProgress.close()
+      }, 500);
+
+      if(error===400||error===409){
+        this.promptAction.showToast({
+          message:'注册失败，呼号或邮箱已经存在'
+        });
+      }
+
     }
   }
 

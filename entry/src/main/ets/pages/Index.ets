@@ -96,27 +96,27 @@ struct Index {
         Tabs({ barPosition: BarPosition.End, controller: this.controller }){
           TabContent(){
             Column(){
-              Divider().strokeWidth(5).color('#fff1f3f5')
-              Row(){
+              Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
+
                 Text("当前时区时间：")
                   .fontSize(20)
-                  .textAlign(TextAlign.Start)
                 TextClock()
+                  .fontSize(20)
                   .format("yyyy年M月d日HH:mm:ss")
-              }
-              Divider().strokeWidth(5).color('#fff1f3f5')
-              Row(){
+
+              Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
+
                 Text("当前UTC时间：")
                   .fontSize(20)
-                  .textAlign(TextAlign.Start)
                 TextClock({timeZoneOffset:0})
+                  .fontSize(20)
                   .format("yyyy年M月d日HH:mm:ss")
-              }
-              Divider().strokeWidth(5).color('#fff1f3f5')
+
+              Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
 
               Text('当前用户呼号：'+this.callsign)
                 .fontSize(20)
-              Divider().strokeWidth(5).color('#fff1f3f5')
+              Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
               Row({ space: 35 }){
                 Image($r('app.media.quick_mark'))
                   .width(160)
@@ -138,7 +138,7 @@ struct Index {
 
           TabContent(){
             Column({ space: 5 }){
-              Divider().strokeWidth(5).color('#fff1f3f5')
+              Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
               Text('基础知识')
                 .width('100%')
                 .height(50)
@@ -146,7 +146,7 @@ struct Index {
                 .onClick(() => {
                   this.index.pushPath({ name: 'base_index1' })
                 })
-              Divider().strokeWidth(3).color('#fff1f3f5')
+              Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
               Text('梅登海德网格定位系统(点我选点计算)')
                 .borderRadius(15)
                 .width('100%')
@@ -179,7 +179,7 @@ struct Index {
                 Text('梅登海德网格定位结果:')
                 Text(this.locator)
               }
-              Divider().strokeWidth(2).color('#fff1f3f5')
+              Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
               Text('摩尔斯电码工具及训练')
                 .width('100%')
                 .height(50)
@@ -187,7 +187,7 @@ struct Index {
                 .onClick(() => {
                   this.index.pushPath({ name: 'base_index2' })
                 })
-              Divider().strokeWidth(2).color('#fff1f3f5')
+              Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
               Text('SSTV(慢扫描电视)工具')
                 .width('100%')
                 .height(50)
@@ -195,7 +195,7 @@ struct Index {
                 .onClick(() => {
                   this.index.pushPath({ name: 'base_index3' })
                 })
-              Divider().strokeWidth(2).color('#fff1f3f5')
+              Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
             }
             .height('100%')
             .width("90%")
@@ -204,7 +204,7 @@ struct Index {
 
           TabContent() {
             Column() {
-              Divider().strokeWidth(5).color('#fff1f3f5')
+              Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
               //用户信息行
               Row() {
                 if (this.token === '') {
@@ -231,7 +231,7 @@ struct Index {
                 }
               })
 
-              Divider().strokeWidth(5).color('#fff1f3f5')
+              Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
               //其他行信息
               Column() {
 
@@ -242,13 +242,13 @@ struct Index {
                 }
                 .height(50)
                 .borderRadius(15)
-                .backgroundColor('#ffffffff')
+                .backgroundColor($r('sys.color.comp_background_primary'))
                 .width('100%')
                 .onClick(() => {
                   this.index.pushPath({ name: 'about' })
                 })
 
-                Divider().strokeWidth(2).color('#fff1f3f5')
+                Divider().strokeWidth(2).color($r('sys.color.background_fourth'))
                 Row() {
                   Text('应用ICP备案：' + '宁ICP备2024006429号')
                     .fontSize(18)
@@ -256,13 +256,13 @@ struct Index {
                 }
                 .height(50)
                 .borderRadius(15)
-                .backgroundColor('#ffffffff')
+                .backgroundColor($r('sys.color.comp_background_primary'))
                 .width('100%')
                 .onClick(() => {
                   this.index.pushPath({ name: 'beian_web_page' })
                 })
 
-                Divider().strokeWidth(2).color('#fff1f3f5')
+                Divider().strokeWidth(2).color($r('sys.color.background_fourth'))
                 Row() {
                   Text('退出登录')
                     .fontSize(18)
@@ -277,7 +277,7 @@ struct Index {
                 })
                 .height(50)
                 .borderRadius(15)
-                .backgroundColor('#ffffffff')
+                .backgroundColor($r('sys.color.comp_background_primary'))
                 .width('100%')
               }
               .width('90%')

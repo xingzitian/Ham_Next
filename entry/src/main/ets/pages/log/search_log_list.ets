@@ -8,7 +8,7 @@ export struct log_search {
   private promptAction: PromptAction = this.uiContext.getPromptAction();
 
   @State log_list: res_log_list = {
-    success: true,
+    success: false,
     message: '',
     data: {
       logs: [{
@@ -68,7 +68,7 @@ export struct log_search {
   async http_log_search(use:number,page:number, token: string,date?:string,mode?:string,contactCallsign?:string,minFrequency?:number,maxFrequency?:number) {
     try {
       this.log_list = {
-        success: true,
+        success: false,
         message: '',
         data: {
           logs: [{
@@ -123,6 +123,10 @@ export struct log_search {
       })
 
     } catch (error) {
+      this.promptAction.showToast({
+        message: '暂时只有0条，请检查是否已经添加过或者没有登录',
+        duration: 2000
+      })
       console.error('Error occurred during request:', error);
     }
   }
@@ -133,7 +137,7 @@ export struct log_search {
         Column({ space: 6 }) {
           TextInput({ placeholder: '输入对方呼号或选择简单筛选' })
             .borderRadius(20)
-            .backgroundColor('#ffe5e5ea')
+            .backgroundColor($r('sys.color.background_tertiary'))
             .height(50)
             .width('90%')
             .fontSize(16)
@@ -175,7 +179,7 @@ export struct log_search {
 
           Row() {
             TextInput({ placeholder: "频率下限" })
-              .backgroundColor('#ffe5e5ea')
+              .backgroundColor($r('sys.color.background_tertiary'))
               .fontWeight(FontWeight.Medium)
               .textAlign(TextAlign.Center)
               .margin(8)
@@ -185,7 +189,7 @@ export struct log_search {
               })
 
             TextInput({ placeholder: "频率上限" })
-              .backgroundColor('#ffe5e5ea')
+              .backgroundColor($r('sys.color.background_tertiary'))
               .fontWeight(FontWeight.Medium)
               .textAlign(TextAlign.Center)
               .margin(8)
@@ -219,32 +223,35 @@ export struct log_search {
           }
 
           List({ space: 10 }) {
-            ForEach(this.log_list.data.logs, (item: rx_log) => {
-              ListItem() {
-                Column() {
-                  Text(item.timestamp)
-                    .fontSize(22)
-                    .fontWeight(FontWeight.Bold)
-                    .textAlign(TextAlign.Start)
-                  Row() {
-                    Text('模式' + item.mode)
-                      .width("40%")
-                    Text('频率' + String(item.frequency) + 'Mhz')
-                      .width("40%")
-                  }
+            if(this.log_list.success!==false){
+              ForEach(this.log_list.data.logs, (item: rx_log) => {
+                ListItem() {
+                  Column() {
+                    Text(item.timestamp)
+                      .fontSize(22)
+                      .fontWeight(FontWeight.Bold)
+                      .textAlign(TextAlign.Start)
+                    Row() {
+                      Text('模式' + item.mode)
+                        .width("40%")
+                      Text('频率' + String(item.frequency) + 'Mhz')
+                        .width("40%")
+                    }
 
+                  }
+                  .alignItems(HorizontalAlign.Start)
                 }
-                .alignItems(HorizontalAlign.Start)
-              }
-              .borderRadius(10)
-              .backgroundColor('#ffe5e5ea')
-              .height(50)
-              .width('90%')
-              .onClick(() => {
-                this.index.pushPath({ name: 'log_info' })
-                this.log_code = item.id
+                .borderRadius(10)
+                .backgroundColor($r('sys.color.background_tertiary'))
+                .height(50)
+                .width('90%')
+                .onClick(() => {
+                  this.index.pushPath({ name: 'log_info' })
+                  this.log_code = item.id
+                })
               })
-            })
+            }
+
           }
         }
         .height("92%")
