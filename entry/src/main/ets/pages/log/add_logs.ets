@@ -1,6 +1,6 @@
 import { http_log_add, tx_log } from '../http_server/httpService';
 import { sceneMap } from '@kit.MapKit';
-import { LoadingDialog, promptAction, PromptAction } from '@kit.ArkUI';
+import { LoadingDialog, PromptAction } from '@kit.ArkUI';
 //单文件项目标识add_logs
 //完成
 

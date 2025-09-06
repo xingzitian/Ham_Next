@@ -11,6 +11,12 @@
     {
       "name": "EntryAbility_label",
       "value": "业余无线电通联日志记录及小工具"
+    },{
+      "name": "ACCELEROMETER_reason",
+      "value": "寻找卫星时确定设备指向"
+    },{
+      "name": "LOCATION_reason",
+      "value": "寻找卫星时确定用户所在位置以便计算仰角以及观测"
     }
   ]
 }

@@ -10,6 +10,8 @@ import { MaidenheadLocator } from './cw/base_resource'
 import { MorseCodeConverter } from './cw/MorseCodeConverter'
 import { MorseMinimalPractice } from './cw/MorseMinimalPractice'
 
+import {SatellitePassPage} from './Satellite/Satellite_index'
+
 import {MorseTraining} from './cw/MorseTraining'
 import {sstv_1} from './cw/sstv/1'
 import { beian_web_page, private_cq_web_page, private_huawei_web_page, } from './about/Web_page'
@@ -39,6 +41,7 @@ struct Index {
   private controller: TabsController = new TabsController()
   private uiContext: UIContext = this.getUIContext();
   private promptAction: PromptAction = this.uiContext.getPromptAction();
+  private context = this.getUIContext().getHostContext() as common.UIAbilityContext;
   @Provide('index') index: NavPathStack = new NavPathStack()
   @StorageLink('token') token: string = ''
   @StorageLink('callsign') callsign: string = '';
@@ -86,6 +89,8 @@ struct Index {
       MorseTraining()
     }else if (name === "sstv_1") {
       sstv_1()
+    }else if (name === "SatellitePassPage") {
+      SatellitePassPage()
     }
   }
 
@@ -98,24 +103,27 @@ struct Index {
             Column(){
               Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
 
-                Text("当前时区时间：")
-                  .fontSize(20)
-                TextClock()
-                  .fontSize(20)
-                  .format("yyyy年M月d日HH:mm:ss")
-
-              Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
-
-                Text("当前UTC时间：")
-                  .fontSize(20)
-                TextClock({timeZoneOffset:0})
-                  .fontSize(20)
-                  .format("yyyy年M月d日HH:mm:ss")
-
-              Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
-
-              Text('当前用户呼号：'+this.callsign)
+              Text("当前时区时间：")
                 .fontSize(20)
+              TextClock()
+                .fontSize(20)
+                .format("yyyy年M月d日HH:mm:ss")
+
+              Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
+
+              Text("当前UTC时间：")
+                .fontSize(20)
+              TextClock({timeZoneOffset:0})
+                .fontSize(20)
+                .format("yyyy年M月d日HH:mm:ss")
+
+              Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
+
+              Text('当前登录用户呼号：')
+                .fontSize(20)
+              Text(this.callsign)
+                .fontSize(20)
+
               Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
               Row({ space: 35 }){
                 Image($r('app.media.quick_mark'))
@@ -129,11 +137,49 @@ struct Index {
                     this.index.pushPath({name:'log_search'})
                   })
               }
+              Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
+              Row({ space: 35 }){
+                Image($r('app.media.sos'))
+                  .width(160)
+                  .onClick(()=>{
+                    try {
+                      this.promptAction.showDialog({
+                        title: '注意',
+                        message: '你可以前往页面在输入框输入SOS，并点击闪光灯模式，即可同时播放音频和调用闪光灯进行闪烁',
+                        buttons: [
+                          {
+                            text: '确认',
+                            color: '#000000'
+                          }
+                        ]
+                      }, (err, data) => {
+                        if (err) {
+                          console.error('showDialog err: ' + err);
+                          return;
+                        }
+                        console.info('showDialog success callback, click button: ' + data.index);
+                        if(data.index===0){
+                          this.index.pushPath({name:'MorseCodeConverter'})
+                        }
+                      });
+                    } catch (error) {
+                      let message = (error as BusinessError).message;
+                      let code = (error as BusinessError).code;
+                      console.error(`showDialog args error code is ${code}, message is ${message}`);
+                    }
+                  })
+
+                Image($r('app.media.sate'))
+                  .width(160)
+                  .onClick(()=>{
+                    this.index.pushPath({name:'SatellitePassPage'})
+                  })
+              }
             }
             .height("100%")
           }
           .height("100%")
-          .tabBar("日志")
+          .tabBar("首页")
 
 
           TabContent(){
@@ -153,7 +199,7 @@ struct Index {
                 .height(50)
                 .fontSize(20)
                 .onClick(() => {
-                  sceneMap.chooseLocation(getContext(this) as common.UIAbilityContext, locationChoosingOptions)
+                  sceneMap.chooseLocation(this.context, locationChoosingOptions)
                     .then((data) => {
                       console.info("ChooseLocation", "Succeeded in choosing location.");
                       console.log(data.siteId)

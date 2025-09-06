@@ -1,7 +1,7 @@
 // MorseTraining.ets
 import audio from '@ohos.multimedia.audio';
 
-import { promptAction, PromptAction } from '@kit.ArkUI';
+import {  PromptAction } from '@kit.ArkUI';
 // 摩尔斯电码映射表
 const MORSE_CODE_MAP: Record<string, string> = {
   'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
@@ -656,7 +656,7 @@ export struct MorseTraining {
 
     // 使用showDialog显示结果
     try {
-      await promptAction.showDialog({
+      await this.promptAction.showDialog({
         title: '答题结果',
         message: `正确答案: ${this.correctAnswer}\n\n` +
           `摩尔斯电码: ${this.morseCodeOfAnswer}\n\n` +

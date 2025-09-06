@@ -864,7 +864,7 @@ export struct MorseCodeConverter {
             })
             .margin({ top: 5, bottom: 5 })
 
-          Button('闪光灯模式(可SOS)')
+          Button('闪光灯模式')
             .onClick(() => {
               this.syncFlashlightWithAudio();
             })
