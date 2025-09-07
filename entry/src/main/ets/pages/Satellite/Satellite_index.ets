@@ -10,12 +10,16 @@ import abilityAccessCtrl from '@ohos.abilityAccessCtrl';
 interface SatellitePassInfo {
   noradId: number;
   name: string;
+  pass_number:number;
   startTime: string;
   endTime: string;
   maxElevation: number;
   duration: number;
 }
-interface m{ lat: number; lng: number; alt: number }
+
+PersistentStorage.persistProp('lat', 39.9042);
+PersistentStorage.persistProp('lng', 116.4074);
+PersistentStorage.persistProp('alt', 0);
 
 @Component
 export struct SatellitePassPage {
@@ -24,6 +28,8 @@ export struct SatellitePassPage {
   private promptAction: PromptAction = this.uiContext.getPromptAction();
   private atManager: abilityAccessCtrl.AtManager = abilityAccessCtrl.createAtManager();
   @Consume('index') index: NavPathStack;
+
+
   // 卫星列表（从后端获取）
   @State satelliteList: SatelliteTLE[] = [];
   // 已选择的卫星
@@ -33,21 +39,23 @@ export struct SatellitePassPage {
   // 加载状态
   @State isLoading: boolean = false;
   // 用户位置（默认为北京）
-  @State userLocation: m = {
-    lat: 39.9042,
-    lng: 116.4074,
-    alt: 0
-  };
+  @StorageLink('NORAD_ID')NORAD_ID:number=0
+  @StorageLink('lat') lat: number = 0
+  @StorageLink('lng') lng: number = 0
+  @StorageLink('alt') alt: number = 0
+  @StorageLink('start_time')start_time:string=''
+  @StorageLink('duration') duration: number = 0
   // 天数限制
-  @State daysLimit: number = 5;
+  @State daysLimit: number = 2;
   // 最低仰角限制
-  @State minElevation: number = 10;
+  @State minElevation: number = 16;
   // 是否显示卫星选择弹窗
   @State showSatelliteDialog: boolean = false;
   // 最近一次过境距离现在的时间（格式化）
   @State nextPassCountdown: string = '';
   // 计时器ID
   private countdownTimer: number = 0;
+
 
   // 组件生命周期
   aboutToAppear() {
@@ -65,8 +73,7 @@ export struct SatellitePassPage {
 
   private requestSensorPermissions(): void {
     try {
-      let context = this.context;
-      this.atManager.requestPermissionsFromUser(context, [
+      this.atManager.requestPermissionsFromUser(this.context, [
         'ohos.permission.APPROXIMATELY_LOCATION','ohos.permission.LOCATION'
       ]).then((data) => {
         console.info('权限申请结果: ' + JSON.stringify(data));
@@ -94,11 +101,9 @@ export struct SatellitePassPage {
       }
       if (location) {
         console.info('locationChange: location=' + JSON.stringify(location));
-        this.userLocation = {
-          lat: location.latitude,
-          lng: location.longitude,
-          alt: location.altitude || 0
-        };
+        this.lat=location.latitude
+        this.lng=location.longitude
+        this.alt=location.altitude || 0
       }
     };
 
@@ -157,9 +162,9 @@ export struct SatellitePassPage {
       for (const satellite of this.selectedSatellites) {
         const response: AdvancedPassesResponse = await SatelliteService.getAdvancedPasses(
           satellite.norad_id,
-          this.userLocation.lat,
-          this.userLocation.lng,
-          this.userLocation.alt,
+          this.lat,
+          this.lng,
+          this.alt,
           this.daysLimit,
           this.minElevation
         );
@@ -170,6 +175,7 @@ export struct SatellitePassPage {
             this.passResults = [...this.passResults, {
               noradId: satellite.norad_id,
               name: satellite.name,
+              pass_number:pass.pass_number,
               startTime: pass.start_time,
               endTime: pass.end_time,
               maxElevation: pass.max_elevation,
@@ -312,7 +318,7 @@ export struct SatellitePassPage {
         // 查询条件区域
         Row() {
           // 天数限制输入框
-          TextInput({ placeholder: "天数限制" })
+          TextInput({ placeholder: "查询天数", text:String(this.daysLimit)})
             .type(InputType.Number)
             .width('40%')
             .margin(8)
@@ -327,7 +333,7 @@ export struct SatellitePassPage {
             })
 
           // 最低仰角输入框
-          TextInput({ placeholder: "最低仰角" })
+          TextInput({ placeholder: "最低仰角" ,text:String(this.minElevation)})
             .type(InputType.Number)
             .width('40%')
             .margin(8)
@@ -351,7 +357,7 @@ export struct SatellitePassPage {
             .fontWeight(FontWeight.Medium)
             .layoutWeight(1)
 
-          Button('获取定位')
+          Button('手动定位')
             .fontSize(14)
             .height(36)
             .padding({ left: 12, right: 12 })
@@ -387,7 +393,7 @@ export struct SatellitePassPage {
         .width('90%')
         .margin({ bottom: 12 })
 
-        Text('纬度:'+this.userLocation.lat.toFixed(4)+'经度:'+this.userLocation.lng.toFixed(4))
+        Text('纬度:'+this.lat.toFixed(4)+'经度:'+this.lng.toFixed(4))
           .fontSize(18)
           .fontColor($r('sys.color.brand'))
           .fontWeight(FontWeight.Bold)
@@ -449,7 +455,7 @@ export struct SatellitePassPage {
             .margin(20)
         }
 
-        // 结果列表 - 增加高度
+        // 结果列表
         List() {
           ForEach(this.passResults, (passInfo: SatellitePassInfo) => {
             ListItem(){
@@ -501,7 +507,12 @@ export struct SatellitePassPage {
                   .backgroundColor($r('sys.color.brand'))
                   .fontColor($r('sys.color.comp_common_contrary'))
                   .onClick(()=>{
-
+                    AppStorage.setOrCreate('NEXT_PASS_TIME', passInfo.startTime);
+                    this.NORAD_ID=passInfo.noradId
+                    this.start_time=passInfo.startTime
+                    this.duration=passInfo.duration
+                    AppStorage.setOrCreate('SATELLITE_NAME', passInfo.name);
+                    this.index.pushPath({ name: 'SatelliteRadar' })
                   })
               }
               .padding(12)

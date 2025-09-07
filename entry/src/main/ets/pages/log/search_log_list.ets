@@ -43,6 +43,8 @@ export struct log_search {
   @State mode: string = '选择模式';
   @State contactCallsign: string = '';
 
+  @State min_Frequency_text:string=''
+  @State max_Frequency_text:string=''
   @State total:number=0
   private fruits: TextCascadePickerRangeContent[] = [
     {
@@ -135,7 +137,7 @@ export struct log_search {
     NavDestination() {
       Column() {
         Column({ space: 6 }) {
-          TextInput({ placeholder: '输入对方呼号或选择简单筛选' })
+          TextInput({ placeholder: '输入对方呼号或选择简单筛选',text:this.contactCallsign })
             .borderRadius(20)
             .backgroundColor($r('sys.color.background_tertiary'))
             .height(50)
@@ -178,7 +180,7 @@ export struct log_search {
           }
 
           Row() {
-            TextInput({ placeholder: "频率下限" })
+            TextInput({ placeholder: "频率下限", text:this.min_Frequency_text})
               .backgroundColor($r('sys.color.background_tertiary'))
               .fontWeight(FontWeight.Medium)
               .textAlign(TextAlign.Center)
@@ -186,9 +188,10 @@ export struct log_search {
               .width('40%')
               .onChange((minFrequency: string) => {
                 this.minFrequency = Number(minFrequency)
+                this.min_Frequency_text=minFrequency
               })
 
-            TextInput({ placeholder: "频率上限" })
+            TextInput({ placeholder: "频率上限" , text:this.max_Frequency_text})
               .backgroundColor($r('sys.color.background_tertiary'))
               .fontWeight(FontWeight.Medium)
               .textAlign(TextAlign.Center)
@@ -196,6 +199,7 @@ export struct log_search {
               .width('40%')
               .onChange((maxFrequency: string) => {
                 this.maxFrequency = Number(maxFrequency)
+                this.max_Frequency_text=maxFrequency
               })
           }
 
@@ -210,7 +214,10 @@ export struct log_search {
                 this.minFrequency=-1
                 this.maxFrequency=-1
                 this.contactCallsign=''
+                this.min_Frequency_text=''
+                this.max_Frequency_text=''
                 this.http_log_search(0,this.start_page,this.token);
+
               })
 
             Button("搜索")

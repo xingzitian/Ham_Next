@@ -11,6 +11,7 @@ import { MorseCodeConverter } from './cw/MorseCodeConverter'
 import { MorseMinimalPractice } from './cw/MorseMinimalPractice'
 
 import {SatellitePassPage} from './Satellite/Satellite_index'
+import {SatelliteRadar} from './Satellite/Radar'
 
 import {MorseTraining} from './cw/MorseTraining'
 import {sstv_1} from './cw/sstv/1'
@@ -91,6 +92,8 @@ struct Index {
       sstv_1()
     }else if (name === "SatellitePassPage") {
       SatellitePassPage()
+    }else if (name === "SatelliteRadar") {
+      SatelliteRadar()
     }
   }
 

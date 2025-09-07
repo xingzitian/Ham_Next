@@ -8,7 +8,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 //2.reject是返回失败的方法
 //3.初始状态是pending，等待中，进行异步的操作
 
-let url_main: string = 'http://cq.zhangyulin.top:8000/api/';
+let url_main: string = 'http://cq.zhangyulin.top:12302/api/';
 let HttpRequestOptions: http.HttpRequestOptions = {};
 let mode_url = '';
 

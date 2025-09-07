@@ -5,7 +5,7 @@ import { promptAction } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 // 卫星服务基础URL
-let satelliteUrl: string = 'http://192.168.3.3:3000/api/'; // 请替换为实际服务器地址
+let satelliteUrl: string = 'http://cq.zhangyulin.top:12303/api/'; // 请替换为实际服务器地址
 
 // 1. 卫星TLE数据接口
 export interface SatelliteTLE {
@@ -94,6 +94,7 @@ export interface PassTrajectoryResponse {
 
 // 12. 过境信息接口
 export interface PassInfo {
+  pass_number:number;
   start_time: string;
   end_time: string;
   max_elevation_time: string;
@@ -159,9 +160,9 @@ export class SatelliteService {
       );
     });
   }
-  //
+
   // // 获取卫星详细信息
-  // static async getSatelliteDetail(noradId: number):Promise<SatelliteTLE> {
+  // static async getSatelliteDetail(request: OrbitCalculateRequest):Promise<SatelliteTLE> {
   //   const mode_url = 'orbit/calculate';
   //   const HttpRequestOptions: http.HttpRequestOptions = {
   //     method: http.RequestMethod.POST,
@@ -195,13 +196,23 @@ export class SatelliteService {
   //   });
   // }
 
-  // 计算卫星轨道
-  static async calculateOrbit(request: OrbitCalculateRequest): Promise<OrbitCalculateResponse> {
+  // 计算卫星当前位置
+  static async calculateOrbit(
+    noradId: number,
+    lat: number,
+    lng: number,
+    alt: number
+  ): Promise<OrbitCalculateResponse> {
     const mode_url = 'orbit/calculate';
     const HttpRequestOptions: http.HttpRequestOptions = {
       method: http.RequestMethod.POST,
       header: { 'Content-Type': 'application/json' },
-      extraData: JSON.stringify(request)
+      extraData: {
+        norad_id: noradId,
+        lat: lat,
+        lng: lng,
+        alt: alt
+      }
     };
 
     return new Promise((resolve, reject) => {
@@ -235,9 +246,11 @@ export class SatelliteService {
     noradId: number,
     lat: number,
     lng: number,
-    alt: number = 0
+    alt: number = 0,
+    duration:number=10,
+    start_time:string
   ): Promise<PassTrajectoryResponse> {
-    const mode_url = `pass/${noradId}?lat=${lat}&lng=${lng}&alt=${alt}`;
+    const mode_url = `pass/by-time/${noradId}?lat=${lat}&lng=${lng}&alt=${alt}&start_time=${start_time}&duration=${duration}`;
     const HttpRequestOptions: http.HttpRequestOptions = {
       method: http.RequestMethod.GET,
       header: { 'Content-Type': 'application/json' }
@@ -275,8 +288,8 @@ export class SatelliteService {
     lat: number,
     lng: number,
     alt: number = 0,
-    days: number = 5,
-    minElevation: number = 10
+    days: number = 2,
+    minElevation: number = 16
   ): Promise<AdvancedPassesResponse> {
     const mode_url = `passes/${noradId}?lat=${lat}&lng=${lng}&alt=${alt}&days=${days}&min_elevation=${minElevation}`;
     const HttpRequestOptions: http.HttpRequestOptions = {
