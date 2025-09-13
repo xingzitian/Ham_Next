@@ -6,9 +6,9 @@
         "type": "HarmonyOS",
         "material": {
           "storeFile": "C:/Users/31629/Desktop/hw/next/证书以及发布相关文件/key_release_dada.p12",
-          "storePassword": "00000022BF58F84EDB72BB4298EE9258D3476BEAF40147B86578FDE266573140223FE9C520AF347C8719C31A7DE0A282DD97",
+          "storePassword": "000000229F4D6466CFB307D4F170E2AA072D32FF3E20E4EE0307276353DFA2753404570A559238FC982A7F1A720B5B7B90F1",
           "keyAlias": "key_release_dada",
-          "keyPassword": "000000229D64D5BD78F8CDCEFE71EF2B36ADA33B27BEA6A329941C562BB937C3A9F2EF701EC7ACDC61E4920718DB1BD47FAD",
+          "keyPassword": "00000022A64B04D2A7596610D1498C65E420E975DA9DF9C85B6CFBE6D351427DBA60333E0A3038D7DFF20CECA2B8DD349125",
           "signAlg": "SHA256withECDSA",
           "profile": "C:/Users/31629/Desktop/hw/next/证书以及发布相关文件/debug_file/debug_cqDebug.p7b",
           "certpath": "C:/Users/31629/Desktop/hw/next/证书以及发布相关文件/debug_file/debug.cer"

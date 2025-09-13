@@ -3,7 +3,7 @@ import { sensor } from '@kit.SensorServiceKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import abilityAccessCtrl from '@ohos.abilityAccessCtrl';
 import common from '@ohos.app.ability.common';
-import { SatelliteService } from '../http_server/SatelliteService';
+import { SatelliteService,trans ,transmitters_info} from '../http_server/SatelliteService';
 import { PromptAction } from '@kit.ArkUI';
 // 定义轨迹点接口
 interface TrajectoryPoint {
@@ -18,6 +18,15 @@ interface TrajectoryPoint {
 interface Coordinate {
   x: number;
   y: number;
+}
+
+interface TransmitterWithDisplay extends transmitters_info {
+  displayDownlink: string;
+  displayUplink: string;
+}
+
+interface TransWithDisplay extends trans {
+  transmitters: TransmitterWithDisplay[];
 }
 
 @Component
@@ -57,6 +66,36 @@ export struct SatelliteRadar {
   @StorageProp('alt') alt: number = 0;
   @StorageProp('duration') duration: number = 0;
   @StorageProp('start_time') start_time: string = '';
+  @State isSatelliteVisible:boolean=false
+  @State rad_trans:trans={
+    success:false,
+    satellite:{
+      norad_id:-1,
+      name:'',
+      status:'',
+    },
+    transmitters:[{
+      description: '',
+      downlink_frequency: -1,
+      downlink_mode: '',
+      uplink_frequency: -1,
+      uplink_mode: '',
+      invert: false
+    }],
+    count:-1,
+  }
+
+
+  @State new_rad_trans: TransWithDisplay = {
+    success: false,
+    satellite: {
+      norad_id: -1,
+      name: '',
+      status: ''
+    },
+    transmitters: [],
+    count: -1
+  };
 
   // 导航控制器
   @Consume('index') index: NavPathStack;
@@ -76,12 +115,13 @@ export struct SatelliteRadar {
     // 设置定时获取卫星位置（每10秒一次）
     this.positionTimer = setInterval(() => {
       this.fetchSatellitePosition();
-    }, 10000);
+    }, 5000);
 
     // 启动倒计时更新
     this.startCountdown();
 
     // 立即获取轨迹数据和卫星位置
+    this.get_transmitters()
     this.fetchTrajectoryData();
     this.fetchSatellitePosition();
   }
@@ -232,10 +272,40 @@ export struct SatelliteRadar {
     }
   }
 
+  private async get_transmitters(): Promise<void> {
+    try {
+      this.promptAction.showToast({ message: '正在获取卫星轨迹数据...' });
+
+      // 调用API获取轨迹数据
+      const response = await SatelliteService.get_transmitters(
+        this.noradId
+      );
+
+      console.info('轨迹API响应:', JSON.stringify(response));
+
+      if (response && response.success) {
+        // 处理轨迹数据
+        this.rad_trans=response
+        this.new_rad_trans = this.processTransmittersWithDoppler(
+          this.rad_trans,
+          0,
+          false
+        );
+        this.promptAction.showToast({ message: '卫星收发器获取成功' });
+      } else {
+        console.error('卫星收发器失败，响应:', response);
+        this.promptAction.showToast({ message: '卫星收发器数据失败，请重试' });
+      }
+    } catch (error) {
+      console.error('卫星收发器失败:', error);
+      this.promptAction.showToast({ message: '卫星收发器失败，请检查网络连接' });
+    }
+  }
+
   // 获取卫星实时位置
+  // 在获取卫星位置的地方
   private async fetchSatellitePosition(): Promise<void> {
     try {
-      // 调用API获取卫星实时位置
       const response = await SatelliteService.calculateOrbit(
         this.noradId,
         this.lat,
@@ -249,20 +319,24 @@ export struct SatelliteRadar {
         this.currentAzimuth = response.data.observer?.azimuth || 0;
         this.currentRange = response.data.observer?.range || 0;
 
-        this.drawRadar();
-      } else {
-        console.error('获取卫星位置失败，响应:', response);
-        this.currentElevation = 0;
-        this.currentAzimuth = 0;
-        this.currentRange = 0;
+        // 获取 range_rate (公里/秒)
+        const rangeRate = response.data.observer?.range_rate || 0;
+
+        // 检查卫星是否可见
+        this.isSatelliteVisible = response.data.observer.is_visible;
+
+        // 处理收发器数据并赋值给 new_rad_trans
+        this.new_rad_trans = this.processTransmittersWithDoppler(
+          this.rad_trans,
+          rangeRate,
+          true
+        );
+        console.log(String(this.isSatelliteVisible));
+        console.log(String(rangeRate));
         this.drawRadar();
       }
     } catch (error) {
       console.error('获取卫星位置失败:', error);
-      this.currentElevation = 0;
-      this.currentAzimuth = 0;
-      this.currentRange = 0;
-      this.drawRadar();
     }
   }
 
@@ -426,7 +500,6 @@ export struct SatelliteRadar {
   }
 
   // 绘制雷达界面
-  // 绘制雷达界面
   private drawRadar(): void {
     if (!this.context) {
       console.error("Canvas context is not available");
@@ -477,20 +550,26 @@ export struct SatelliteRadar {
       this.context.lineWidth = ringWidths[i];
       this.context.stroke();
 
+
+
       // 添加刻度标注
-      this.context.font = '18px sans-serif';
+      this.context.font = '50px sans-serif';
       this.context.fillStyle = '#ff5ba854'; // 确认色
       this.context.textAlign = 'center';
       this.context.textBaseline = 'middle';
 
-      // 在四个方向上都添加标注
-      const directions = [0, 90, 180, 270];
-      for (const direction of directions) {
-        const angleRad = direction * Math.PI / 180;
-        const labelX = actualCenterX + (radius + 20) * Math.sin(angleRad);
-        const labelY = actualCenterY - (radius + 20) * Math.cos(angleRad);
-        this.context.fillText(`${elevation}°`, labelX, labelY);
-      }
+      // 在一个方向上都添加标注
+      // const directions = [0];
+      // for (const direction of directions) {
+        const angleRad = 0 * Math.PI / 180;
+        const labelX = actualCenterX + (radius + 10) * Math.sin(angleRad);
+        const labelY = actualCenterY - (radius + 10) * Math.cos(angleRad);
+        if(elevation!==0){
+          this.context.fillText(`${elevation}°`, labelX, labelY);
+        }
+
+      // }
+
     }
 
     // 绘制中心点（90°仰角）
@@ -500,11 +579,11 @@ export struct SatelliteRadar {
     this.context.fill();
 
     // 添加中心点标注
-    this.context.font = '18px sans-serif';
+    this.context.font = '50px sans-serif';
     this.context.fillStyle = '#ff5ba854';
     this.context.textAlign = 'center';
     this.context.textBaseline = 'middle';
-    this.context.fillText('90°', actualCenterX, actualCenterY - 25);
+    this.context.fillText('90°', actualCenterX, actualCenterY - 20);
 
     // 绘制网格线 - 径向线（方位角网格）
     for (let i = 0; i < 8; i++) {
@@ -529,14 +608,18 @@ export struct SatelliteRadar {
 
     for (let i = 0; i < directions.length; i++) {
       const angleRad = directionAngles[i] * Math.PI / 180;
-      const labelX = actualCenterX + (actualRadius + 25) * Math.sin(angleRad);
-      const labelY = actualCenterY - (actualRadius + 25) * Math.cos(angleRad);
+      const labelX = actualCenterX + (actualRadius +10) * Math.sin(angleRad);
+      const labelY = actualCenterY - (actualRadius +10) * Math.cos(angleRad);
 
-      this.context.font = '20px sans-serif';
+      this.context.font = '40px sans-serif';
       this.context.fillStyle = '#ff5ba854'; // 确认色
       this.context.textAlign = 'center';
       this.context.textBaseline = 'middle';
-      this.context.fillText(directions[i], labelX, labelY);
+      if(directions[i]==='N'||directions[i]==='S'){
+        this.context.fillText(directions[i], actualCenterX + (actualRadius -10) * Math.sin(angleRad), actualCenterY - (actualRadius -10) * Math.cos(angleRad));
+      }else{
+        this.context.fillText(directions[i], labelX, labelY);
+      }
     }
 
     // 绘制平滑的轨迹曲线
@@ -624,6 +707,91 @@ export struct SatelliteRadar {
     this.drawRadar();
   }
 
+
+
+
+  // 处理收发器数据的函数（修复版）
+  private processTransmittersWithDoppler(
+    originalData: trans,
+    rangeRate: number, // 使用 range_rate (公里/秒)
+    isSatelliteVisible: boolean
+  ): TransWithDisplay {
+    // 创建新的数据对象，手动复制属性
+    const newData: TransWithDisplay = {
+      success: originalData.success,
+      satellite: {
+        norad_id: originalData.satellite.norad_id,
+        name: originalData.satellite.name,
+        status: originalData.satellite.status
+      },
+      transmitters: [],
+      count: originalData.count
+    };
+
+    // 处理每个收发器
+    if (originalData.transmitters) {
+      newData.transmitters = originalData.transmitters.map((transmitter: transmitters_info): TransmitterWithDisplay => {
+        let displayDownlink: string;
+        let displayUplink: string;
+
+
+          // 卫星可见时，应用多普勒频移
+          // rangeRate 单位是公里/秒，需要转换为米/秒
+          const relativeSpeed = rangeRate * 1000; // 转换为米/秒
+
+          // 计算多普勒频移
+          const downlinkDoppler = this.calculateDopplerShift(transmitter.downlink_frequency, relativeSpeed);
+          const uplinkDoppler = this.calculateDopplerShift(transmitter.uplink_frequency, relativeSpeed);
+
+          // 应用频移（注意符号：远离时频率降低，接近时频率增加）
+          const downlinkWithDoppler = transmitter.downlink_frequency + downlinkDoppler;
+          const uplinkWithDoppler = transmitter.uplink_frequency + uplinkDoppler;
+
+          displayDownlink = this.formatFrequency(downlinkWithDoppler);
+          displayUplink = this.formatFrequency(uplinkWithDoppler);
+
+          // 调试信息
+          // console.info(`多普勒频移计算:
+          // 原始下行频率: ${transmitter.downlink_frequency} Hz
+          // 原始上行频率: ${transmitter.uplink_frequency} Hz
+          // 相对速度: ${relativeSpeed} m/s
+          // 下行频移: ${downlinkDoppler} Hz
+          // 上行频移: ${uplinkDoppler} Hz
+          // 调整后下行: ${downlinkWithDoppler} Hz
+          // 调整后上行: ${uplinkWithDoppler} Hz`);
+
+
+        // 手动复制所有属性并添加新属性
+        return {
+          description: transmitter.description,
+          downlink_frequency: transmitter.downlink_frequency,
+          downlink_mode: transmitter.downlink_mode,
+          uplink_frequency: transmitter.uplink_frequency,
+          uplink_mode: transmitter.uplink_mode,
+          invert: transmitter.invert,
+          displayDownlink,
+          displayUplink
+        };
+      });
+    }
+
+    return newData;
+  }
+
+  // 辅助函数
+  private calculateDopplerShift(baseFrequency: number, relativeSpeed: number): number {
+    if (baseFrequency <= 0) return 0;
+    const speedOfLight = 299792458;
+    return -baseFrequency * relativeSpeed / speedOfLight;
+  }
+
+  private formatFrequency(frequency: number): string {
+    if (frequency <= 0) return "N/A";
+    if (frequency >= 1000000) return `${(frequency / 1000000).toFixed(4)} MHz`;
+    if (frequency >= 1000) return `${(frequency / 1000).toFixed(4)} kHz`;
+    return `${frequency.toFixed(4)} Hz`;
+  }
+
   build() {
     NavDestination() {
       Column() {
@@ -690,36 +858,77 @@ export struct SatelliteRadar {
           .margin({ bottom: 10 })
         }
         .width('100%')
-        .margin({ top: 10, bottom: 10 })
+        .margin({ top: 10, bottom: 5 })
 
         // 下半部分留空，用于放置卫星收发器
         Column() {
-          // 这里可以放置卫星收发器组件
-          Text("卫星收发器区域")
-            .fontSize(16)
-            .fontColor('#e5ffffff') // font_primary
-            .margin({ top: 20 })
+          List({ space: 5 }) {
+              ForEach(this.new_rad_trans.transmitters, (item:TransmitterWithDisplay) => {
+                ListItem() {
+                  Column() {
+                    Row(){
+                      Text(){
+                        SymbolSpan($r('sys.symbol.arrowtriangle_down_fill'))
+                      }
+                      Text(item.description)
+                        .fontSize(16)
+                        .fontWeight(FontWeight.Bold)
+                      Text(){
+                        SymbolSpan($r('sys.symbol.arrowtriangle_up_fill'))
+                      }
+                    }
+                    .width('100%')
+                    .justifyContent(FlexAlign.SpaceAround)
+                    Row() {
+                      if(String(item.downlink_frequency)==='null'){
+                        Text('暂无')
+                          .width('40%')
+                      }else{
+                        Text(item.displayDownlink)
+                          .width('40%')
+                      }
+                      if(String(item.uplink_frequency)==='null'){
+                        Text('暂无')
+                          .width('40%')
+                      }else{
+                        Text(item.displayUplink)
+                          .width('40%')
+                      }
+                    }
+                    .width('100%')
+                    .justifyContent(FlexAlign.SpaceAround)
+                    Row(){
+                      Text('模式：'+item.downlink_mode)
+                      if(item.invert===true){
+                        Text('倒置：是')
+                      }else{
+                        Text('倒置：否')
+                      }
+                    }
+                    .width('100%')
+                    .justifyContent(FlexAlign.SpaceAround)
+                  }
+                  .width('100%')
+                  .alignItems(HorizontalAlign.Center)
+                }
+                .backgroundColor($r('sys.color.background_secondary'))
+                .borderRadius(10)
+              })
+          }
         }
-        .width('100%')
-        .height('20%')
+        .width('90%')
+        .height('30%')
         .justifyContent(FlexAlign.Center)
 
-        // 控制区域
-        Row() {
-          Button(this.showTrajectoryPoints ? '隐藏轨迹点' : '显示轨迹点')
-            .width('80%')
-            .height(40)
-            .backgroundColor('#ff5ba854') // 确认色
-            .fontColor('#ffffffff') // font_on_primary
-            .onClick(() => {
-              this.toggleTrajectoryPoints();
-            })
-            .margin(10)
-        }
-        .justifyContent(FlexAlign.Center)
-        .width('100%')
-        .height('15%')
-
+        Button(this.showTrajectoryPoints ? '隐藏轨迹点' : '显示轨迹点')
+          .width('80%')
+          .height(40)
+          .backgroundColor('#ff5ba854') // 确认色
+          .fontColor('#ffffffff') // font_on_primary
+          .onClick(() => {
+            this.toggleTrajectoryPoints();
+          })
+          .margin({top:5})
       }
       .width('100%')
       .height('100%')

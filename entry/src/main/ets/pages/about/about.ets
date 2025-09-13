@@ -8,7 +8,7 @@ export struct about {
         Image($r('app.media.cq_logo_update'))
           .height(100)
           .margin({ top: 40, bottom: 10 });
-        Text('版本信息：' + '1.0.6')
+        Text('版本信息：' + '1.0.10')
           .fontSize(30);
       }
     }

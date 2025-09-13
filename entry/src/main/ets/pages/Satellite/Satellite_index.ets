@@ -2,7 +2,7 @@
 import { SatelliteService, SatelliteTLE, AdvancedPassesResponse } from '../http_server/SatelliteService';
 import { PromptAction } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
-
+import { UIPagination } from '@hw-agconnect/ui-pagination';
 import { geoLocationManager } from '@kit.LocationKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import abilityAccessCtrl from '@ohos.abilityAccessCtrl';
@@ -29,9 +29,19 @@ export struct SatellitePassPage {
   private atManager: abilityAccessCtrl.AtManager = abilityAccessCtrl.createAtManager();
   @Consume('index') index: NavPathStack;
 
+  // 新增状态：搜索关键词
+  @State searchKeyword: string = '';
+  // 新增状态：是否正在搜索
+  @State isSearching: boolean = false;
+  // 新增状态：搜索结果的卫星列表
+  @State searchResults: SatelliteTLE[] = [];
+  @State displayList: SatelliteTLE[] = [];
+  @State search:string=''
 
+  @State start_page:number=1
   // 卫星列表（从后端获取）
   @State satelliteList: SatelliteTLE[] = [];
+  @State satelliteList_copy: SatelliteTLE[] = [];
   // 已选择的卫星
   @State selectedSatellites: SatelliteTLE[] = [];
   // 查询结果（过境信息列表）
@@ -59,6 +69,7 @@ export struct SatellitePassPage {
 
   // 组件生命周期
   aboutToAppear() {
+
     this.requestSensorPermissions()
     // 获取卫星列表
     this.fetchSatelliteList();
@@ -120,6 +131,7 @@ export struct SatellitePassPage {
       const response = await SatelliteService.getSatelliteList();
       if (response.success) {
         this.satelliteList = response.data;
+        this.satelliteList_cp(100)
       } else {
         this.promptAction.showToast({ message: '获取卫星列表失败' });
       }
@@ -128,6 +140,19 @@ export struct SatellitePassPage {
       this.promptAction.showToast({ message: '获取卫星列表失败' });
     }
   }
+
+  private async satelliteList_cp(true_total:number): Promise<void> {
+    try {
+      this.satelliteList_copy=[]
+      for(let i=true_total-100;i<true_total;i+=1){
+        this.satelliteList_copy.push(this.satelliteList[i])
+      }
+      this.updateDisplayList();
+    } catch (error) {
+      console.error('更新卫星列表错误:', error);
+    }
+  }
+
 
   // 添加卫星到选择列表
   private addSatellite(satellite: SatelliteTLE): void {
@@ -218,26 +243,27 @@ export struct SatellitePassPage {
     this.updateCountdown();
   }
 
-  // 更新倒计时显示
+  // 更新倒计时显示（精确到秒）
   private updateCountdown(): void {
     if (this.passResults.length === 0) {
       this.nextPassCountdown = '暂无过境信息';
       return;
     }
 
-    // 获取当前时间
+    // 获取当前时间（精确到毫秒）
     const now = new Date();
+    const nowTime = now.getTime();
 
     // 找到第一个未来的过境
-    const nextPass = this.passResults.find(pass => new Date(pass.startTime) > now);
+    const nextPass = this.passResults.find(pass => new Date(pass.startTime).getTime() > nowTime);
 
     if (!nextPass) {
       this.nextPassCountdown = '所有过境已结束';
       return;
     }
 
-    // 计算距离开始的时间差
-    const timeDiff = new Date(nextPass.startTime).getTime() - now.getTime();
+    // 计算距离开始的时间差（毫秒）
+    const timeDiff = new Date(nextPass.startTime).getTime() - nowTime;
 
     // 转换为天、小时、分钟、秒
     const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
@@ -245,38 +271,74 @@ export struct SatellitePassPage {
     const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
 
-    // 格式化显示
+    // 格式化显示（始终显示秒）
     if (days > 0) {
-      this.nextPassCountdown = `最近的卫星下次过境: ${days}天${hours}小时${minutes}分钟后`;
+      this.nextPassCountdown = `最近的卫星下次过境: ${days}天${hours}小时${minutes}分${seconds}秒后`;
     } else if (hours > 0) {
-      this.nextPassCountdown = `最近的卫星下次过境: ${hours}小时${minutes}分钟${seconds}秒后`;
+      this.nextPassCountdown = `最近的卫星下次过境: ${hours}小时${minutes}分${seconds}秒后`;
     } else if (minutes > 0) {
-      this.nextPassCountdown = `最近的卫星下次过境: ${minutes}分钟${seconds}秒后`;
+      this.nextPassCountdown = `最近的卫星下次过境: ${minutes}分${seconds}秒后`;
     } else {
       this.nextPassCountdown = `最近的卫星下次过境: ${seconds}秒后`;
     }
   }
 
 
-  // 将UTC时间转换为中国时间（UTC+8）
+
+  // 正确地将UTC时间转换为中国时间（UTC+8）
   private convertUTCToChinaTime(utcTime: string): string {
     const date = new Date(utcTime);
-    date.setHours(date.getHours() + 8); // UTC+8
-    return date.toISOString().replace('T', ' ').substring(0, 19);
+    // 使用更可靠的方法处理时区转换
+    const chinaTime = new Date(date.getTime() + (8 * 60 * 60 * 1000));
+    return chinaTime.toISOString().replace('T', ' ').substring(0, 19);
   }
 
-  // 格式化时间显示（使用中国时间）
+  // 格式化时间显示（使用中国时间，精确到秒）
   private formatTime(timeString: string): string {
     const chinaTime = this.convertUTCToChinaTime(timeString);
     const date = new Date(chinaTime);
-    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
   }
 
-  // 格式化日期显示（使用中国时间）
-  private formatDate(timeString: string): string {
+  // 格式化日期时间显示（完整格式）
+  private formatDateTime(timeString: string): string {
     const chinaTime = this.convertUTCToChinaTime(timeString);
     const date = new Date(chinaTime);
-    return `${date.getMonth() + 1}月${date.getDate()}日`;
+    return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
+  }
+
+  // 新增方法：更新显示列表
+  private updateDisplayList(): void {
+    if (this.isSearching) {
+      this.displayList = this.searchResults;
+    } else {
+      this.displayList = this.satelliteList_copy;
+    }
+  }
+
+  // 新增方法：执行搜索
+  private performSearch(keyword: string): void {
+    this.searchKeyword = keyword;
+    this.isSearching = keyword.length > 0;
+
+    if (this.isSearching) {
+      // 执行模糊搜索
+      const lowerKeyword = keyword.toLowerCase();
+      this.searchResults = this.satelliteList.filter(satellite =>
+      satellite.name.toLowerCase().includes(lowerKeyword) ||
+      satellite.norad_id.toString().includes(lowerKeyword)
+      );
+    }
+
+    this.updateDisplayList();
+  }
+
+  // 新增方法：清空搜索
+  private clearSearch(): void {
+    this.searchKeyword = '';
+    this.isSearching = false;
+    this.searchResults = [];
+    this.updateDisplayList();
   }
 
   build() {
@@ -476,7 +538,7 @@ export struct SatellitePassPage {
 
                 // 时间信息（显示中国时间）
                 Row() {
-                  Text(`${this.formatDate(passInfo.startTime)}`)
+                  Text(`${this.formatDateTime(passInfo.startTime)}`)
                     .fontSize(12)
                     .fontColor($r('sys.color.font_tertiary'))
 
@@ -528,38 +590,110 @@ export struct SatellitePassPage {
         // 卫星选择弹窗
         if (this.showSatelliteDialog) {
           Column() {
-            Text('选择卫星')
-              .fontSize(18)
-              .fontColor($r('sys.color.font_primary'))
-              .fontWeight(FontWeight.Bold)
-              .margin({ top: 20, bottom: 16 })
+            // 弹窗标题和搜索框
+            Row() {
+              Text('选择卫星')
+                .fontSize(18)
+                .fontColor($r('sys.color.font_primary'))
+                .fontWeight(FontWeight.Bold)
+                .layoutWeight(1)
 
-            Scroll() {
-              Column() {
-                ForEach(this.satelliteList, (satellite: SatelliteTLE) => {
-                  Button(satellite.name)
-                    .width('90%')
-                    .height(44)
-                    .margin(6)
-                    .backgroundColor(this.selectedSatellites.some(s => s.norad_id === satellite.norad_id) ?
-                    $r('sys.color.brand') : $r('sys.color.background_secondary'))
-                    .fontColor(this.selectedSatellites.some(s => s.norad_id === satellite.norad_id) ?
-                    $r('sys.color.comp_common_contrary') : $r('sys.color.font_primary'))
-                    .onClick(() => this.addSatellite(satellite))
+              // 搜索框
+              TextInput({ placeholder: '搜索卫星名称或ID', text: this.searchKeyword })
+                .width('60%')
+                .height(36)
+                .margin({ right: 8 })
+                .backgroundColor($r('sys.color.background_secondary'))
+                .fontColor($r('sys.color.font_primary'))
+                .border({ width: 1, color: $r('sys.color.comp_divider'), radius: 4 })
+                .onChange((value: string) => {
+                  this.search=value
+                })
+
+              // 清空搜索按钮
+              if (this.isSearching) {
+                Text() {
+                  SymbolSpan($r('sys.symbol.delete_left'))
+                    .fontSize(20)
+                }
+                .width(36)
+                .height(36)
+                .onClick(() => {
+                  this.clearSearch();
+                })
+              }else{
+                Text() {
+                  SymbolSpan($r('sys.symbol.magnifyingglass'))
+                    .fontSize(20)
+                }
+                .width(36)
+                .height(36)
+                .onClick(() => {
+                  this.performSearch(this.search);
                 })
               }
             }
-            .height('70%')
+            .padding({ top: 20, bottom: 10, left: 16, right: 16 })
+
+            // 显示搜索提示或结果数量
+            if (this.isSearching) {
+              Text(this.searchResults.length > 0 ?
+                `找到 ${this.searchResults.length} 个匹配结果` :
+                '未找到匹配的卫星')
+                .fontSize(14)
+                .fontColor($r('sys.color.font_tertiary'))
+                .margin({ bottom: 10 })
+            }
+
+            Scroll() {
+              Column() {
+                // 使用响应式状态变量 displayList 而不是 let 变量
+                if (this.displayList.length === 0) {
+                  Text(this.isSearching ? '请尝试其他搜索词' : '暂无卫星数据')
+                    .fontSize(14)
+                    .fontColor($r('sys.color.font_tertiary'))
+                    .margin(10)
+                } else {
+                  ForEach(this.displayList, (satellite: SatelliteTLE) => {
+                    Button(satellite.name)
+                      .width('90%')
+                      .height(44)
+                      .margin(6)
+                      .backgroundColor(this.selectedSatellites.some(s => s.norad_id === satellite.norad_id) ?
+                      $r('sys.color.brand') : $r('sys.color.background_secondary'))
+                      .fontColor(this.selectedSatellites.some(s => s.norad_id === satellite.norad_id) ?
+                      $r('sys.color.comp_common_contrary') : $r('sys.color.font_primary'))
+                      .onClick(() => this.addSatellite(satellite))
+                  })
+                }
+              }
+            }
+            .height('60%')
             .width('100%')
+
+            // 只有在非搜索模式下显示分页
+            if (!this.isSearching) {
+              UIPagination({
+                currentPage: this.start_page,
+                total: this.satelliteList.length,
+                pageSize: 100,
+                change: (currentV: number) => {
+                  const true_total: number = currentV * 100
+                  this.satelliteList_cp(true_total)
+                  console.log("页面切换")
+                }
+              })
+            }
 
             Button('关闭')
               .width('80%')
-              .height(44)
-              .margin(20)
+              .height(36)
+              .margin(10)
               .backgroundColor($r('sys.color.warning'))
               .fontColor($r('sys.color.comp_common_contrary'))
               .onClick(() => {
                 this.showSatelliteDialog = false;
+                this.clearSearch(); // 关闭时清空搜索
               })
           }
           .width('90%')

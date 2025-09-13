@@ -125,10 +125,33 @@ export interface TrajectoryResponse {
   error?: string;
 }
 
+//16. 卫星收发器接口
+export interface trans{
+  success: boolean;
+  satellite:satellite_info;
+  transmitters:transmitters_info[];
+  count:number;
+}
+export interface satellite_info{
+  norad_id:number;
+  name:string;
+  status:string;
+}
+
+export interface transmitters_info{
+  description: string,
+  downlink_frequency: number,
+  downlink_mode: string,
+  uplink_frequency: number,
+  uplink_mode: string,
+  invert: boolean
+}
+
+
 // 卫星服务类
 export class SatelliteService {
   // 获取卫星列表
-  static async getSatelliteList(limit: number = 100): Promise<SatelliteListResponse> {
+  static async getSatelliteList(limit: number = 10000): Promise<SatelliteListResponse> {
     const mode_url = `satellites?limit=${limit}`;
     const HttpRequestOptions: http.HttpRequestOptions = {
       method: http.RequestMethod.GET,
@@ -322,4 +345,44 @@ export class SatelliteService {
       );
     });
   }
+
+  // 获取卫星过境轨迹（极简模式）
+  static async get_transmitters(
+    noradId: number,
+  ): Promise<trans> {
+    const mode_url = `satellites/${noradId}/transmitters`;
+    const HttpRequestOptions: http.HttpRequestOptions = {
+      method: http.RequestMethod.GET,
+      header: { 'Content-Type': 'application/json' }
+    };
+
+    return new Promise((resolve, reject) => {
+      let httpRequest = http.createHttp();
+      httpRequest.request(
+        satelliteUrl + mode_url,
+        HttpRequestOptions,
+        (err: BusinessError, data: http.HttpResponse) => {
+          if (!err) {
+            if (data.responseCode === 200) {
+              const response: trans = JSON.parse(data.result.toString());
+              hilog.info(0x0001, "SatelliteService", "获取卫星收发器成功");
+              resolve(response);
+            } else {
+              hilog.error(0x0001, "SatelliteService", "获取卫星收发器失败: %{public}i", data.responseCode);
+              reject(data.responseCode);
+            }
+            httpRequest.destroy();
+          } else {
+            hilog.error(0x0001, "SatelliteService", "网络错误: %{public}s", JSON.stringify(err));
+            httpRequest.destroy();
+            reject(err);
+          }
+        }
+      );
+    });
+  }
+
+
+
+
 }
