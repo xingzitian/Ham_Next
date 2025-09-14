@@ -40,7 +40,7 @@ export struct SatellitePassPage {
 
   @State start_page:number=1
   // 卫星列表（从后端获取）
-  @State satelliteList: SatelliteTLE[] = [];
+  @StorageProp('satelliteList') satelliteList: SatelliteTLE[] = [];
   @State satelliteList_copy: SatelliteTLE[] = [];
   // 已选择的卫星
   @State selectedSatellites: SatelliteTLE[] = [];
@@ -69,10 +69,10 @@ export struct SatellitePassPage {
 
   // 组件生命周期
   aboutToAppear() {
-
+    this.satelliteList_cp(100)
     this.requestSensorPermissions()
     // 获取卫星列表
-    this.fetchSatelliteList();
+    // this.fetchSatelliteList();
   }
 
   aboutToDisappear() {
@@ -125,28 +125,13 @@ export struct SatellitePassPage {
     }
   }
 
-  // 获取卫星列表
-  private async fetchSatelliteList(): Promise<void> {
-    try {
-      const response = await SatelliteService.getSatelliteList();
-      if (response.success) {
-        this.satelliteList = response.data;
-        this.satelliteList_cp(100)
-      } else {
-        this.promptAction.showToast({ message: '获取卫星列表失败' });
-      }
-    } catch (error) {
-      console.error('获取卫星列表错误:', error);
-      this.promptAction.showToast({ message: '获取卫星列表失败' });
-    }
-  }
-
   private async satelliteList_cp(true_total:number): Promise<void> {
     try {
       this.satelliteList_copy=[]
-      for(let i=true_total-100;i<true_total;i+=1){
-        this.satelliteList_copy.push(this.satelliteList[i])
-      }
+      this.satelliteList_copy=this.satelliteList.slice(true_total-100, true_total);
+      // for(let i=true_total-100;i<true_total;i+=1){
+      //   this.satelliteList_copy.push(this.satelliteList[i])
+      // }
       this.updateDisplayList();
     } catch (error) {
       console.error('更新卫星列表错误:', error);
@@ -439,6 +424,7 @@ export struct SatellitePassPage {
             .fontColor($r('sys.color.comp_common_contrary'))
             .margin({ right: 8 })
             .onClick(() => {
+              this.satelliteList_cp(100)
               this.showSatelliteDialog = true;
             })
 

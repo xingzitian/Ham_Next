@@ -21,6 +21,8 @@ import { sceneMap } from '@kit.MapKit'
 import { BusinessError } from '@kit.BasicServicesKit'
 import { common } from '@kit.AbilityKit'
 import { PromptAction } from '@kit.ArkUI'
+
+
 let locationChoosingOptions: sceneMap.LocationChoosingOptions = {
   // 地图中心点坐标
   //location: { latitude: 39.92194051376904, longitude: 116.3971836796932 },

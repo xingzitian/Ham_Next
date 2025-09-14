@@ -873,6 +873,8 @@ export struct SatelliteRadar {
                       Text(item.description)
                         .fontSize(16)
                         .fontWeight(FontWeight.Bold)
+                        .textAlign(TextAlign.Center)
+                        .width('90%')
                       Text(){
                         SymbolSpan($r('sys.symbol.arrowtriangle_up_fill'))
                       }
@@ -911,7 +913,7 @@ export struct SatelliteRadar {
                   .width('100%')
                   .alignItems(HorizontalAlign.Center)
                 }
-                .backgroundColor($r('sys.color.background_secondary'))
+                .backgroundColor($r('sys.color.background_fourth'))
                 .borderRadius(10)
               })
           }

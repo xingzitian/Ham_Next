@@ -1,13 +1,14 @@
 import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
-
+import { SatelliteService, SatelliteTLE, AdvancedPassesResponse } from '../pages/http_server/SatelliteService';
 const DOMAIN = 0x0000;
 
 export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     this.context.getApplicationContext().setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET);
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onCreate');
+    this.fetchSatelliteList()
   }
 
   onDestroy(): void {
@@ -40,5 +41,13 @@ export default class EntryAbility extends UIAbility {
   onBackground(): void {
     // Ability has back to background
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onBackground');
+  }
+
+  private async fetchSatelliteList(): Promise<void> {
+    const response = await SatelliteService.getSatelliteList();
+    if (response.success) {
+      AppStorage.setOrCreate('satelliteList', response.data);
+      console.log("调用页面数据下载初始化")
+    }
   }
 }
