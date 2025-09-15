@@ -1,9 +1,9 @@
 import { http_log_add, tx_log } from '../http_server/httpService';
 import { sceneMap } from '@kit.MapKit';
 import { LoadingDialog, PromptAction } from '@kit.ArkUI';
+
 //单文件项目标识add_logs
 //完成
-
 
 
 let locationChoosingOptions: sceneMap.LocationChoosingOptions = {
@@ -25,43 +25,36 @@ export struct add_log {
       content: '正在提交中',
     }),
   })
-
   private fruits: TextCascadePickerRangeContent[] = [
     {
       text: '语音模式',
-      children: [{ text: 'SSB' },{ text: 'FM' },{ text: 'AM' },{ text: 'FSK' }]
-    },    {
+      children: [{ text: 'SSB' }, { text: 'FM' }, { text: 'AM' }, { text: 'FSK' }]
+    }, {
     text: 'CW'
-  },    {
+  }, {
     text: '数字模式',
-    children: [{ text: 'FT8' },{ text: 'RTTY' },{ text: 'APRS' }]
+    children: [{ text: 'FT8' }, { text: 'RTTY' }, { text: 'APRS' }]
   },
     {
       text: '图像模式',
       children: [{ text: 'SSTV' }]
     },
   ];
-  private select : number  = 0;
-
+  private select: number = 0;
   @Consume('index') index: NavPathStack;
   @StorageProp('token') token: string = '';
-  @State timestamp:string='';
-  @State frequency:number=0;
-  @State contactCallsign:string='';
-  @State receivedReport:string='';
-  @State sentReport:string='';
-  @State notes:string='';
-  @State mode :string=''
+  @State timestamp: string = '';
+  @State frequency: number = 0;
+  @State contactCallsign: string = '';
+  @State receivedReport: string = '';
+  @State sentReport: string = '';
+  @State notes: string = '';
+  @State mode: string = ''
+  @State mode_0: string = '模式选择'
+  @State hours: string = '';
+  @State minute: string = '';
 
-  @State mode_0:string='模式选择'
-
-  @State hours:string='';
-  @State minute:string='';
-
-
-
-
-  async http_add_log_request( token: string) {
+  async http_add_log_request(token: string) {
     try {
       const tx_log: tx_log = {
         contactCallsign: this.contactCallsign,
@@ -69,7 +62,7 @@ export struct add_log {
         frequency: this.frequency,
         mode: this.mode,
         sentReport: this.sentReport,
-        receivedReport:this.receivedReport,
+        receivedReport: this.receivedReport,
         notes: this.notes // 可选字段
       };
       console.log(String(tx_log))
@@ -80,7 +73,7 @@ export struct add_log {
       }, 500);
       if (response.success === true) {
         this.promptAction.showToast({
-          message:'提交成功'
+          message: '提交成功'
         });
         this.index.pop()
       }
@@ -89,9 +82,9 @@ export struct add_log {
       setTimeout(() => {
         this.dialogControllerProgress.close()
       }, 500);
-      if(error===400){
+      if (error === 400) {
         this.promptAction.showToast({
-          message:'参数提交不完整，请重新提交'
+          message: '参数提交不完整，请重新提交'
         });
       }
     }
@@ -100,7 +93,7 @@ export struct add_log {
   build() {
     NavDestination() {
       Column({ space: 25 }) {
-        Row(){
+        Row() {
           Button('选择日期')
             .width('40%')
             .margin(15)
@@ -109,22 +102,22 @@ export struct add_log {
                 start: new Date("2000-1-1"),
                 end: new Date("2100-12-31"),
                 showTime: true,
-                useMilitaryTime:true,
+                useMilitaryTime: true,
                 onDateAccept: (date: Date) => {
                   const year = date.getFullYear();
                   const month = ("0" + (date.getMonth() + 1)).slice(-2); // 月份从0开始，需要加1并补0
                   const day = ("0" + date.getDate()).slice(-2); // 日期补0
-                  console.log("获取的时间："+year+"-"+month+"-"+day)
-                  console.log("获取的时间1："+date.getTime())
-                  console.log("获取的时间2："+date.toISOString())
-                  console.log("获取的时间3："+date.toUTCString())
-                  this.timestamp=date.toISOString()
+                  console.log("获取的时间：" + year + "-" + month + "-" + day)
+                  console.log("获取的时间1：" + date.getTime())
+                  console.log("获取的时间2：" + date.toISOString())
+                  console.log("获取的时间3：" + date.toUTCString())
+                  this.timestamp = date.toISOString()
 
                 },
               });
             })
 
-          Button(this.mode_0+this.mode)
+          Button(this.mode_0 + this.mode)
             .margin(15)
             .width('40%')
             .onClick(() => {
@@ -133,19 +126,19 @@ export struct add_log {
                 selected: this.select,
                 onAccept: (value: TextPickerResult) => {
                   this.select = value.index as number
-                  console.log("选择的模式："+value.value)
-                  this.mode_0=value.value[0]
-                  this.mode=value.value[1]
+                  console.log("选择的模式：" + value.value)
+                  this.mode_0 = value.value[0]
+                  this.mode = value.value[1]
                 }
               });
             })
         }
         .width('100%')
 
-        Column(){
+        Column() {
           Text('已经选择的日期(UTC时间)：')
             .fontSize(18)
-          if(this.timestamp!==''){
+          if (this.timestamp !== '') {
             Text(this.timestamp)
               .fontSize(18)
           }
@@ -159,7 +152,7 @@ export struct add_log {
           TextInput({ placeholder: '请输入频率' })
             .type(InputType.NUMBER_DECIMAL)
             .onChange((frequency: string) => {
-              this.frequency=Number(frequency)
+              this.frequency = Number(frequency)
             });
           Text('MHz')
             .fontSize(18)
@@ -172,28 +165,29 @@ export struct add_log {
           TextInput({ placeholder: '请输入对方呼号' })
             .type(InputType.Normal)
             .onChange((contactCallsign: string) => {
-              this.contactCallsign=contactCallsign
+              this.contactCallsign = contactCallsign
             });
         }
         .width('50%')
 
         Row() {
-          Column(){
+          Column() {
             Text('信号报告：')
               .fontSize(18)
           }
+
           TextInput({ placeholder: '收方' })
             .width('30%')
             .type(InputType.Number)
             .onChange((receivedReport: string) => {
-              this.receivedReport=receivedReport
+              this.receivedReport = receivedReport
             });
 
           TextInput({ placeholder: '发方' })
             .width('30%')
             .type(InputType.Number)
             .onChange((sentReport: string) => {
-              this.sentReport=sentReport
+              this.sentReport = sentReport
             });
         }
         .width('100%')
@@ -203,7 +197,7 @@ export struct add_log {
             .fontSize(18)
           TextArea({ placeholder: '请输入备注' })
             .onChange((notes: string) => {
-              this.notes=notes
+              this.notes = notes
             });
         }
         .width('50%')
@@ -228,7 +222,7 @@ export struct add_log {
             })
         }
       }
-      .margin({top:25})
+      .margin({ top: 25 })
       .alignItems(HorizontalAlign.Center)
 
       // Row() {

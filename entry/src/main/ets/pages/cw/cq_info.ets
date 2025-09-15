@@ -6,15 +6,16 @@ import { BusinessError } from '@kit.BasicServicesKit';
 @Component
 export struct base_info_1 {
   @Consume('index') index: NavPathStack;
-  @State morseCodeTable:Array<cw> = morseCodeTable
+  @State morseCodeTable: Array<cw> = morseCodeTable
+
   build() {
     NavDestination() {
-      List({ space: 10 }){
-        ForEach(this.morseCodeTable,(item:cw)=>{
-          ListItem(){
-            Text(item.字符+'  '+item.电码)
+      List({ space: 10 }) {
+        ForEach(this.morseCodeTable, (item: cw) => {
+          ListItem() {
+            Text(item.字符 + '  ' + item.电码)
               .backgroundColor($r('sys.color.comp_background_primary'))
-              .padding({left:10})
+              .padding({ left: 10 })
               .borderRadius(15)
               .width('100%')
               .height(50)
@@ -36,14 +37,15 @@ export struct base_info_1 {
 @Component
 export struct base_info_2 {
   @Consume('index') index: NavPathStack;
-  @State q_phrases:Array<q> = q_phrases
+  @State q_phrases: Array<q> = q_phrases
+
   build() {
     NavDestination() {
-      List({ space: 10 }){
-        ForEach(this.q_phrases,(item:q)=>{
-          ListItem(){
-            Text(item.Q简语+'  '+item.含义)
-              .padding({left:10})
+      List({ space: 10 }) {
+        ForEach(this.q_phrases, (item: q) => {
+          ListItem() {
+            Text(item.Q简语 + '  ' + item.含义)
+              .padding({ left: 10 })
               .borderRadius(15)
               .backgroundColor($r('sys.color.comp_background_primary'))
               .width('100%')
@@ -129,7 +131,7 @@ export struct base_info_2 {
 @Component
 export struct base_info_3 {
   @Consume('index') index: NavPathStack;
-  private phoneticAlphabet:Array<phonetic> = phoneticAlphabet
+  private phoneticAlphabet: Array<phonetic> = phoneticAlphabet
   private soundPool: media.SoundPool | undefined = undefined;
   private soundId: Map<string, number> = new Map();
   private streamId: number = 0;
@@ -144,18 +146,18 @@ export struct base_info_3 {
 
   build() {
     NavDestination() {
-      List({ space: 10 }){
-        ForEach(this.phoneticAlphabet,(item:phonetic)=>{
-          ListItem(){
-            Row(){
-              Text(item.letter+'  '+item.phonetic)
-                .padding({left:10})
+      List({ space: 10 }) {
+        ForEach(this.phoneticAlphabet, (item: phonetic) => {
+          ListItem() {
+            Row() {
+              Text(item.letter + '  ' + item.phonetic)
+                .padding({ left: 10 })
                 .borderRadius(15)
                 .backgroundColor($r('sys.color.comp_background_primary'))
                 .width('80%')
                 .height(50)
                 .fontSize(20)
-              Text(){
+              Text() {
                 SymbolSpan($r('sys.symbol.play_circle_fill'))
                   .fontWeight(FontWeight.Normal)
                   .renderingStrategy(SymbolRenderingStrategy.SINGLE)
@@ -163,7 +165,7 @@ export struct base_info_3 {
                   .fontSize(48)
               }
               .onClick(() => {
-                this.PlaySoundPool(item.phonetic+'.mp3')
+                this.PlaySoundPool(item.phonetic + '.mp3')
               })
               .id('playSoundPoolButton')
             }
@@ -189,7 +191,7 @@ export struct base_info_3 {
         rendererFlags: 1 // 音频渲染器标志。
       }
       //创建soundPool实例。
-      this.soundPool = await media.createSoundPool(32,audioRendererInfo);
+      this.soundPool = await media.createSoundPool(32, audioRendererInfo);
       //注册监听。
       // 加载完成回调。
       this.soundPool!.on('loadComplete', (soundId_: number) => {
@@ -207,12 +209,13 @@ export struct base_info_3 {
         console.error('error happened,message is :' + error.message);
       })
 
-      let context = this.getUIContext().getHostContext();;
+      let context = this.getUIContext().getHostContext();
+      ;
       for (let index = 0; index < this.phoneticAlphabet.length; index++) {
-        let id=this.phoneticAlphabet[index].phonetic+'.mp3'
+        let id = this.phoneticAlphabet[index].phonetic + '.mp3'
         let fileDescriptor = await context!.resourceManager.getRawFd(id);
         let soundId_ = await this.soundPool!.load(fileDescriptor.fd, fileDescriptor.offset, fileDescriptor.length);
-        this.soundId.set(id,soundId_) ;
+        this.soundId.set(id, soundId_);
         console.log('string:' + this.phoneticAlphabet[index].phonetic)
       }
       // 加载音频资源。
@@ -225,12 +228,11 @@ export struct base_info_3 {
     }
   }
 
-  async PlaySoundPool(id:string) {
-    let playParameters: media.PlayParameters = {
-    };
+  async PlaySoundPool(id: string) {
+    let playParameters: media.PlayParameters = {};
     // 开始播放，这边play也可带播放播放的参数PlayParameters，请在音频资源加载完毕，即收到loadComplete回调之后再执行play操作。
-    this.soundPool!.play(this.soundId.get(id),playParameters,  (error, streamID: number) => {
-      console.log(id+String(this.soundId.get(id)))
+    this.soundPool!.play(this.soundId.get(id), playParameters, (error, streamID: number) => {
+      console.log(id + String(this.soundId.get(id)))
       if (error) {
         console.error(`play sound Error: errCode is ${error.code}, errMessage is ${error.message}`)
       } else {
@@ -245,7 +247,7 @@ export struct base_info_3 {
     // await this.soundPool!.stop(this.streamId);
     // 卸载音频资源。
     for (let index = 0; index < this.phoneticAlphabet.length; index++) {
-      let id=this.phoneticAlphabet[index].phonetic+'.mp3'
+      let id = this.phoneticAlphabet[index].phonetic + '.mp3'
       await this.soundPool!.unload(this.soundId.get(id));
     }
     //关闭监听。

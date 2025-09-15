@@ -94,7 +94,7 @@ export interface PassTrajectoryResponse {
 
 // 12. 过境信息接口
 export interface PassInfo {
-  pass_number:number;
+  pass_number: number;
   start_time: string;
   end_time: string;
   max_elevation_time: string;
@@ -126,19 +126,20 @@ export interface TrajectoryResponse {
 }
 
 //16. 卫星收发器接口
-export interface trans{
+export interface trans {
   success: boolean;
-  satellite:satellite_info;
-  transmitters:transmitters_info[];
-  count:number;
-}
-export interface satellite_info{
-  norad_id:number;
-  name:string;
-  status:string;
+  satellite: satellite_info;
+  transmitters: transmitters_info[];
+  count: number;
 }
 
-export interface transmitters_info{
+export interface satellite_info {
+  norad_id: number;
+  name: string;
+  status: string;
+}
+
+export interface transmitters_info {
   description: string,
   downlink_frequency: number,
   downlink_mode: string,
@@ -270,10 +271,11 @@ export class SatelliteService {
     lat: number,
     lng: number,
     alt: number = 0,
-    duration:number=10,
-    start_time:string
+    duration: number = 10,
+    start_time: string
   ): Promise<PassTrajectoryResponse> {
-    const mode_url = `pass/by-time/${noradId}?lat=${lat}&lng=${lng}&alt=${alt}&start_time=${start_time}&duration=${duration}`;
+    const mode_url =
+      `pass/by-time/${noradId}?lat=${lat}&lng=${lng}&alt=${alt}&start_time=${start_time}&duration=${duration}`;
     const HttpRequestOptions: http.HttpRequestOptions = {
       method: http.RequestMethod.GET,
       header: { 'Content-Type': 'application/json' }
@@ -381,8 +383,4 @@ export class SatelliteService {
       );
     });
   }
-
-
-
-
 }

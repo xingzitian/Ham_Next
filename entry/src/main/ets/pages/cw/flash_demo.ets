@@ -7,11 +7,10 @@ export struct Flashlight {
   // 状态变量
   @State isFlashlightOn: boolean = false;
   @State statusMessage: string = '点击按钮打开手电筒';
-
   // 相机和闪光灯相关状态
   @Consume('index') index: NavPathStack;
-  private Context:Context | undefined=undefined
-  private torchSupport:boolean=false;
+  private Context: Context | undefined = undefined
+  private torchSupport: boolean = false;
 
   // 生命周期函数
   async aboutToAppear() {
@@ -24,9 +23,9 @@ export struct Flashlight {
     this.turnOffFlashlight();
   }
 
-  async init(){
+  async init() {
     let cameraManager = camera.getCameraManager(this.Context);
-    this.Context=this.getUIContext().getHostContext();
+    this.Context = this.getUIContext().getHostContext();
     this.torchSupport = cameraManager.isTorchSupported();
   }
 
@@ -45,7 +44,7 @@ export struct Flashlight {
     }
   }
 
- // 关闭手电筒
+  // 关闭手电筒
   async turnOffFlashlight() {
 
     try {
@@ -60,7 +59,6 @@ export struct Flashlight {
       this.statusMessage = '关闭手电筒失败';
     }
   }
-
 
   // 切换手电筒状态
   async toggleFlashlight() {

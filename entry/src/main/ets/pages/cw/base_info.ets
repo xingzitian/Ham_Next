@@ -1,11 +1,10 @@
-
 @Component
 export struct base_index1 {
   @Consume('index') index: NavPathStack;
 
   build() {
     NavDestination() {
-      Column({ space: 10 }){
+      Column({ space: 10 }) {
         Text('CW电码表')
           .width('100%')
           .height(50)
@@ -47,7 +46,7 @@ export struct base_index2 {
 
   build() {
     NavDestination() {
-      Column({ space: 10 }){
+      Column({ space: 10 }) {
         Text('文字转摩尔斯电码音频')
           .width('100%')
           .height(50)
@@ -88,7 +87,7 @@ export struct base_index3 {
 
   build() {
     NavDestination() {
-      Column({ space: 10 }){
+      Column({ space: 10 }) {
         Text('SSTV编码')
           .width('100%')
           .height(50)

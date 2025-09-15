@@ -16,23 +16,23 @@ export struct register {
     }),
   })
   @Consume('index') index: NavPathStack;
-
-  @State password:string='';
-  @State email:string=''
+  @State password: string = '';
+  @State email: string = ''
   @StorageLink('token') token: string = '';
   @StorageLink('callsign') callsign: string = '';
-  async http_register_request(email?:string) {
+
+  async http_register_request(email?: string) {
     try {
       const response =
-        await http_id.httpRequest(1,this.password,this.callsign,this.email);
+        await http_id.httpRequest(1, this.password, this.callsign, this.email);
 
       setTimeout(() => {
         this.dialogControllerProgress.close()
         if (response.success === true) {
           this.promptAction.showToast({
-            message:'注册成功'
+            message: '注册成功'
           });
-          this.token=response.data.token
+          this.token = response.data.token
           this.index.clear();
         }
       }, 500);
@@ -42,9 +42,9 @@ export struct register {
         this.dialogControllerProgress.close()
       }, 500);
 
-      if(error===400||error===409){
+      if (error === 400 || error === 409) {
         this.promptAction.showToast({
-          message:'注册失败，呼号或邮箱已经存在'
+          message: '注册失败，呼号或邮箱已经存在'
         });
       }
 
@@ -64,6 +64,7 @@ export struct register {
             });
         }
         .width('50%')
+
         Row() {
           Text('请输入密码：')
             .fontSize(18)
@@ -74,6 +75,7 @@ export struct register {
             });
         }
         .width('50%')
+
         Row() {
           Text('请输入邮箱：')
             .fontSize(18)
@@ -98,7 +100,7 @@ export struct register {
             })
         }
       }
-      .margin({top:25})
+      .margin({ top: 25 })
       .alignItems(HorizontalAlign.Center)
 
     }

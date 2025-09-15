@@ -3,8 +3,9 @@ import { sensor } from '@kit.SensorServiceKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import abilityAccessCtrl from '@ohos.abilityAccessCtrl';
 import common from '@ohos.app.ability.common';
-import { SatelliteService,trans ,transmitters_info} from '../http_server/SatelliteService';
+import { SatelliteService, trans, transmitters_info } from '../http_server/SatelliteService';
 import { PromptAction } from '@kit.ArkUI';
+
 // 定义轨迹点接口
 interface TrajectoryPoint {
   x: number;
@@ -40,12 +41,10 @@ export struct SatelliteRadar {
   private radarRadius: number = 0;
   private centerX: number = 0;
   private centerY: number = 0;
-
   // 传感器数据
   @State private azimuth: number = 0; // 方位角（0-360度）
-  @State private pitch: number = 0;   // 俯仰角
-  @State private roll: number = 0;    // 横滚角
-
+  @State private pitch: number = 0; // 俯仰角
+  @State private roll: number = 0; // 横滚角
   // 卫星数据
   @State private trajectoryPoints: TrajectoryPoint[] = [];
   @State private currentElevation: number = 0; // 当前卫星仰角
@@ -53,10 +52,8 @@ export struct SatelliteRadar {
   @State private currentRange: number = 0; // 当前卫星距离
   @State private pageTitle: string = '卫星轨迹雷达图'; // 动态标题
   @State private showTrajectoryPoints: boolean = true; // 是否显示轨迹点
-
   // 权限管理
   private atManager: abilityAccessCtrl.AtManager = abilityAccessCtrl.createAtManager();
-
   // 卫星信息 - 通过StorageProp同步
   @StorageProp('NORAD_ID') noradId: number = 0;
   @StorageProp('SATELLITE_NAME') satelliteName: string = '';
@@ -66,15 +63,15 @@ export struct SatelliteRadar {
   @StorageProp('alt') alt: number = 0;
   @StorageProp('duration') duration: number = 0;
   @StorageProp('start_time') start_time: string = '';
-  @State isSatelliteVisible:boolean=false
-  @State rad_trans:trans={
-    success:false,
-    satellite:{
-      norad_id:-1,
-      name:'',
-      status:'',
+  @State isSatelliteVisible: boolean = false
+  @State rad_trans: trans = {
+    success: false,
+    satellite: {
+      norad_id: -1,
+      name: '',
+      status: '',
     },
-    transmitters:[{
+    transmitters: [{
       description: '',
       downlink_frequency: -1,
       downlink_mode: '',
@@ -82,10 +79,8 @@ export struct SatelliteRadar {
       uplink_mode: '',
       invert: false
     }],
-    count:-1,
+    count: -1,
   }
-
-
   @State new_rad_trans: TransWithDisplay = {
     success: false,
     satellite: {
@@ -96,10 +91,8 @@ export struct SatelliteRadar {
     transmitters: [],
     count: -1
   };
-
   // 导航控制器
   @Consume('index') index: NavPathStack;
-
   // 定时器用于实时获取卫星位置
   private positionTimer: number = 0;
   private countdownTimer: number = 0;
@@ -210,9 +203,9 @@ export struct SatelliteRadar {
     try {
       sensor.on(sensor.SensorId.ORIENTATION, (data: sensor.OrientationResponse) => {
         // 方向传感器直接提供三个角度
-        this.azimuth = data.alpha;   // 方位角（0-360度）
-        this.pitch = data.beta;      // 俯仰角（前后倾斜）
-        this.roll = data.gamma;      // 横滚角（左右倾斜')
+        this.azimuth = data.alpha; // 方位角（0-360度）
+        this.pitch = data.beta; // 俯仰角（前后倾斜）
+        this.roll = data.gamma; // 横滚角（左右倾斜')
 
         this.drawRadar();
       }, { interval: 200 });
@@ -285,7 +278,7 @@ export struct SatelliteRadar {
 
       if (response && response.success) {
         // 处理轨迹数据
-        this.rad_trans=response
+        this.rad_trans = response
         this.new_rad_trans = this.processTransmittersWithDoppler(
           this.rad_trans,
           0,
@@ -361,7 +354,7 @@ export struct SatelliteRadar {
         continue;
       }
 
-      const azimuth = point[0];  // 第一个元素是方位角
+      const azimuth = point[0]; // 第一个元素是方位角
       const elevation = point[1]; // 第二个元素是仰角
 
       // 将方位角和仰角转换为雷达坐标
@@ -400,12 +393,14 @@ export struct SatelliteRadar {
     const x = this.centerX + distance * Math.sin(angleRad);
     const y = this.centerY - distance * Math.cos(angleRad);
 
-    return {x, y};
+    return { x, y };
   }
 
   // 绘制平滑的轨迹曲线
   private drawSmoothedTrajectory(): void {
-    if (this.trajectoryPoints.length < 2) return;
+    if (this.trajectoryPoints.length < 2) {
+      return;
+    }
 
     // 使用二次贝塞尔曲线拟合轨迹
     this.context.beginPath();
@@ -439,7 +434,9 @@ export struct SatelliteRadar {
 
   // 绘制改进的十字准星（移除中心圆点）
   private drawCrosshair(x: number, y: number): void {
-    if (!this.context) return;
+    if (!this.context) {
+      return;
+    }
 
     const crosshairSize = 20;
     const lineWidth = 2;
@@ -470,7 +467,9 @@ export struct SatelliteRadar {
 
   // 绘制轨迹点
   private drawTrajectoryPoints(): void {
-    if (!this.showTrajectoryPoints || this.trajectoryPoints.length === 0) return;
+    if (!this.showTrajectoryPoints || this.trajectoryPoints.length === 0) {
+      return;
+    }
 
     // 绘制轨迹点
     for (const point of this.trajectoryPoints) {
@@ -551,7 +550,6 @@ export struct SatelliteRadar {
       this.context.stroke();
 
 
-
       // 添加刻度标注
       this.context.font = '50px sans-serif';
       this.context.fillStyle = '#ff5ba854'; // 确认色
@@ -561,12 +559,12 @@ export struct SatelliteRadar {
       // 在一个方向上都添加标注
       // const directions = [0];
       // for (const direction of directions) {
-        const angleRad = 0 * Math.PI / 180;
-        const labelX = actualCenterX + (radius + 10) * Math.sin(angleRad);
-        const labelY = actualCenterY - (radius + 10) * Math.cos(angleRad);
-        if(elevation!==0){
-          this.context.fillText(`${elevation}°`, labelX, labelY);
-        }
+      const angleRad = 0 * Math.PI / 180;
+      const labelX = actualCenterX + (radius + 10) * Math.sin(angleRad);
+      const labelY = actualCenterY - (radius + 10) * Math.cos(angleRad);
+      if (elevation !== 0) {
+        this.context.fillText(`${elevation}°`, labelX, labelY);
+      }
 
       // }
 
@@ -608,16 +606,17 @@ export struct SatelliteRadar {
 
     for (let i = 0; i < directions.length; i++) {
       const angleRad = directionAngles[i] * Math.PI / 180;
-      const labelX = actualCenterX + (actualRadius +10) * Math.sin(angleRad);
-      const labelY = actualCenterY - (actualRadius +10) * Math.cos(angleRad);
+      const labelX = actualCenterX + (actualRadius + 10) * Math.sin(angleRad);
+      const labelY = actualCenterY - (actualRadius + 10) * Math.cos(angleRad);
 
       this.context.font = '40px sans-serif';
       this.context.fillStyle = '#ff5ba854'; // 确认色
       this.context.textAlign = 'center';
       this.context.textBaseline = 'middle';
-      if(directions[i]==='N'||directions[i]==='S'){
-        this.context.fillText(directions[i], actualCenterX + (actualRadius -10) * Math.sin(angleRad), actualCenterY - (actualRadius -10) * Math.cos(angleRad));
-      }else{
+      if (directions[i] === 'N' || directions[i] === 'S') {
+        this.context.fillText(directions[i], actualCenterX + (actualRadius - 10) * Math.sin(angleRad),
+          actualCenterY - (actualRadius - 10) * Math.cos(angleRad));
+      } else {
         this.context.fillText(directions[i], labelX, labelY);
       }
     }
@@ -699,16 +698,14 @@ export struct SatelliteRadar {
     const x = this.centerX + distance * Math.sin(angleRad);
     const y = this.centerY - distance * Math.cos(angleRad);
 
-    return {x, y};
+    return { x, y };
   }
+
   // 切换轨迹点显示
   private toggleTrajectoryPoints(): void {
     this.showTrajectoryPoints = !this.showTrajectoryPoints;
     this.drawRadar();
   }
-
-
-
 
   // 处理收发器数据的函数（修复版）
   private processTransmittersWithDoppler(
@@ -735,30 +732,30 @@ export struct SatelliteRadar {
         let displayUplink: string;
 
 
-          // 卫星可见时，应用多普勒频移
-          // rangeRate 单位是公里/秒，需要转换为米/秒
-          const relativeSpeed = rangeRate * 1000; // 转换为米/秒
+        // 卫星可见时，应用多普勒频移
+        // rangeRate 单位是公里/秒，需要转换为米/秒
+        const relativeSpeed = rangeRate * 1000; // 转换为米/秒
 
-          // 计算多普勒频移
-          const downlinkDoppler = this.calculateDopplerShift(transmitter.downlink_frequency, relativeSpeed);
-          const uplinkDoppler = this.calculateDopplerShift(transmitter.uplink_frequency, relativeSpeed);
+        // 计算多普勒频移
+        const downlinkDoppler = this.calculateDopplerShift(transmitter.downlink_frequency, relativeSpeed);
+        const uplinkDoppler = this.calculateDopplerShift(transmitter.uplink_frequency, relativeSpeed);
 
-          // 应用频移（注意符号：远离时频率降低，接近时频率增加）
-          const downlinkWithDoppler = transmitter.downlink_frequency + downlinkDoppler;
-          const uplinkWithDoppler = transmitter.uplink_frequency + uplinkDoppler;
+        // 应用频移（注意符号：远离时频率降低，接近时频率增加）
+        const downlinkWithDoppler = transmitter.downlink_frequency + downlinkDoppler;
+        const uplinkWithDoppler = transmitter.uplink_frequency + uplinkDoppler;
 
-          displayDownlink = this.formatFrequency(downlinkWithDoppler);
-          displayUplink = this.formatFrequency(uplinkWithDoppler);
+        displayDownlink = this.formatFrequency(downlinkWithDoppler);
+        displayUplink = this.formatFrequency(uplinkWithDoppler);
 
-          // 调试信息
-          // console.info(`多普勒频移计算:
-          // 原始下行频率: ${transmitter.downlink_frequency} Hz
-          // 原始上行频率: ${transmitter.uplink_frequency} Hz
-          // 相对速度: ${relativeSpeed} m/s
-          // 下行频移: ${downlinkDoppler} Hz
-          // 上行频移: ${uplinkDoppler} Hz
-          // 调整后下行: ${downlinkWithDoppler} Hz
-          // 调整后上行: ${uplinkWithDoppler} Hz`);
+        // 调试信息
+        // console.info(`多普勒频移计算:
+        // 原始下行频率: ${transmitter.downlink_frequency} Hz
+        // 原始上行频率: ${transmitter.uplink_frequency} Hz
+        // 相对速度: ${relativeSpeed} m/s
+        // 下行频移: ${downlinkDoppler} Hz
+        // 上行频移: ${uplinkDoppler} Hz
+        // 调整后下行: ${downlinkWithDoppler} Hz
+        // 调整后上行: ${uplinkWithDoppler} Hz`);
 
 
         // 手动复制所有属性并添加新属性
@@ -780,15 +777,23 @@ export struct SatelliteRadar {
 
   // 辅助函数
   private calculateDopplerShift(baseFrequency: number, relativeSpeed: number): number {
-    if (baseFrequency <= 0) return 0;
+    if (baseFrequency <= 0) {
+      return 0;
+    }
     const speedOfLight = 299792458;
     return -baseFrequency * relativeSpeed / speedOfLight;
   }
 
   private formatFrequency(frequency: number): string {
-    if (frequency <= 0) return "N/A";
-    if (frequency >= 1000000) return `${(frequency / 1000000).toFixed(4)} MHz`;
-    if (frequency >= 1000) return `${(frequency / 1000).toFixed(4)} kHz`;
+    if (frequency <= 0) {
+      return "N/A";
+    }
+    if (frequency >= 1000000) {
+      return `${(frequency / 1000000).toFixed(4)} MHz`;
+    }
+    if (frequency >= 1000) {
+      return `${(frequency / 1000).toFixed(4)} kHz`;
+    }
     return `${frequency.toFixed(4)} Hz`;
   }
 
@@ -863,59 +868,62 @@ export struct SatelliteRadar {
         // 下半部分留空，用于放置卫星收发器
         Column() {
           List({ space: 5 }) {
-              ForEach(this.new_rad_trans.transmitters, (item:TransmitterWithDisplay) => {
-                ListItem() {
-                  Column() {
-                    Row(){
-                      Text(){
-                        SymbolSpan($r('sys.symbol.arrowtriangle_down_fill'))
-                      }
-                      Text(item.description)
-                        .fontSize(16)
-                        .fontWeight(FontWeight.Bold)
-                        .textAlign(TextAlign.Center)
-                        .width('90%')
-                      Text(){
-                        SymbolSpan($r('sys.symbol.arrowtriangle_up_fill'))
-                      }
+            ForEach(this.new_rad_trans.transmitters, (item: TransmitterWithDisplay) => {
+              ListItem() {
+                Column() {
+                  Row() {
+                    Text() {
+                      SymbolSpan($r('sys.symbol.arrowtriangle_down_fill'))
                     }
-                    .width('100%')
-                    .justifyContent(FlexAlign.SpaceAround)
-                    Row() {
-                      if(String(item.downlink_frequency)==='null'){
-                        Text('暂无')
-                          .width('40%')
-                      }else{
-                        Text(item.displayDownlink)
-                          .width('40%')
-                      }
-                      if(String(item.uplink_frequency)==='null'){
-                        Text('暂无')
-                          .width('40%')
-                      }else{
-                        Text(item.displayUplink)
-                          .width('40%')
-                      }
+
+                    Text(item.description)
+                      .fontSize(16)
+                      .fontWeight(FontWeight.Bold)
+                      .textAlign(TextAlign.Center)
+                      .width('90%')
+                    Text() {
+                      SymbolSpan($r('sys.symbol.arrowtriangle_up_fill'))
                     }
-                    .width('100%')
-                    .justifyContent(FlexAlign.SpaceAround)
-                    Row(){
-                      Text('模式：'+item.downlink_mode)
-                      if(item.invert===true){
-                        Text('倒置：是')
-                      }else{
-                        Text('倒置：否')
-                      }
-                    }
-                    .width('100%')
-                    .justifyContent(FlexAlign.SpaceAround)
                   }
                   .width('100%')
-                  .alignItems(HorizontalAlign.Center)
+                  .justifyContent(FlexAlign.SpaceAround)
+
+                  Row() {
+                    if (String(item.downlink_frequency) === 'null') {
+                      Text('暂无')
+                        .width('40%')
+                    } else {
+                      Text(item.displayDownlink)
+                        .width('40%')
+                    }
+                    if (String(item.uplink_frequency) === 'null') {
+                      Text('暂无')
+                        .width('40%')
+                    } else {
+                      Text(item.displayUplink)
+                        .width('40%')
+                    }
+                  }
+                  .width('100%')
+                  .justifyContent(FlexAlign.SpaceAround)
+
+                  Row() {
+                    Text('模式：' + item.downlink_mode)
+                    if (item.invert === true) {
+                      Text('倒置：是')
+                    } else {
+                      Text('倒置：否')
+                    }
+                  }
+                  .width('100%')
+                  .justifyContent(FlexAlign.SpaceAround)
                 }
-                .backgroundColor($r('sys.color.background_fourth'))
-                .borderRadius(10)
-              })
+                .width('100%')
+                .alignItems(HorizontalAlign.Center)
+              }
+              .backgroundColor($r('sys.color.background_fourth'))
+              .borderRadius(10)
+            })
           }
         }
         .width('90%')
@@ -930,7 +938,7 @@ export struct SatelliteRadar {
           .onClick(() => {
             this.toggleTrajectoryPoints();
           })
-          .margin({top:5})
+          .margin({ top: 5 })
       }
       .width('100%')
       .height('100%')

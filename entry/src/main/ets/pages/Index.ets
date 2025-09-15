@@ -4,17 +4,17 @@ import { register } from './user/register'
 import { log_search } from './log/search_log_list'
 import { log_info } from './log/log_info'
 import { about } from './about/about'
-import { base_index1,base_index2,base_index3 } from './cw/base_info'
+import { base_index1, base_index2, base_index3 } from './cw/base_info'
 import { base_info_1, base_info_2, base_info_3 } from './cw/cq_info'
 import { MaidenheadLocator } from './cw/base_resource'
 import { MorseCodeConverter } from './cw/MorseCodeConverter'
 import { MorseMinimalPractice } from './cw/MorseMinimalPractice'
 
-import {SatellitePassPage} from './Satellite/Satellite_index'
-import {SatelliteRadar} from './Satellite/Radar'
+import { SatellitePassPage } from './Satellite/Satellite_index'
+import { SatelliteRadar } from './Satellite/Radar'
 
-import {MorseTraining} from './cw/MorseTraining'
-import {sstv_1} from './cw/sstv/1'
+import { MorseTraining } from './cw/MorseTraining'
+import { sstv_1 } from './cw/sstv/1'
 import { beian_web_page, private_cq_web_page, private_huawei_web_page, } from './about/Web_page'
 
 import { sceneMap } from '@kit.MapKit'
@@ -48,9 +48,8 @@ struct Index {
   @Provide('index') index: NavPathStack = new NavPathStack()
   @StorageLink('token') token: string = ''
   @StorageLink('callsign') callsign: string = '';
-
-  @State locator:string=''
-  @State locationName:string=''
+  @State locator: string = ''
+  @State locationName: string = ''
 
   @Builder
   PageMap(name: string) {
@@ -60,52 +59,51 @@ struct Index {
       register()
     } else if (name === "login") {
       login()
-    }else if (name === "log_search") {
+    } else if (name === "log_search") {
       log_search()
-    }else if (name === "log_info") {
+    } else if (name === "log_info") {
       log_info()
-    }else if (name === "beian_web_page") {
+    } else if (name === "beian_web_page") {
       beian_web_page()
-    }else if (name === "private_huawei_web_page") {
+    } else if (name === "private_huawei_web_page") {
       private_huawei_web_page()
-    }else if (name === "private_cq_web_page") {
+    } else if (name === "private_cq_web_page") {
       private_cq_web_page()
-    }else if (name === "about") {
+    } else if (name === "about") {
       about()
-    }else if (name === "base_index1") {
+    } else if (name === "base_index1") {
       base_index1()
-    }else if (name === "base_index2") {
+    } else if (name === "base_index2") {
       base_index2()
-    }else if (name === "base_index3") {
+    } else if (name === "base_index3") {
       base_index3()
-    }else if (name === "base_info_1") {
+    } else if (name === "base_info_1") {
       base_info_1()
-    }else if (name === "base_info_2") {
+    } else if (name === "base_info_2") {
       base_info_2()
-    }else if (name === "base_info_3") {
+    } else if (name === "base_info_3") {
       base_info_3()
-    }else if (name === "MorseCodeConverter") {
+    } else if (name === "MorseCodeConverter") {
       MorseCodeConverter()
-    }else if (name === "MorseMinimalPractice") {
+    } else if (name === "MorseMinimalPractice") {
       MorseMinimalPractice()
-    }else if (name === "MorseTraining") {
+    } else if (name === "MorseTraining") {
       MorseTraining()
-    }else if (name === "sstv_1") {
+    } else if (name === "sstv_1") {
       sstv_1()
-    }else if (name === "SatellitePassPage") {
+    } else if (name === "SatellitePassPage") {
       SatellitePassPage()
-    }else if (name === "SatelliteRadar") {
+    } else if (name === "SatelliteRadar") {
       SatelliteRadar()
     }
   }
 
-
   build() {
     Navigation(this.index) {
-      Column(){
-        Tabs({ barPosition: BarPosition.End, controller: this.controller }){
-          TabContent(){
-            Column(){
+      Column() {
+        Tabs({ barPosition: BarPosition.End, controller: this.controller }) {
+          TabContent() {
+            Column() {
               Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
 
               Text("当前时区时间：")
@@ -118,7 +116,7 @@ struct Index {
 
               Text("当前UTC时间：")
                 .fontSize(20)
-              TextClock({timeZoneOffset:0})
+              TextClock({ timeZoneOffset: 0 })
                 .fontSize(20)
                 .format("yyyy年M月d日HH:mm:ss")
 
@@ -130,23 +128,24 @@ struct Index {
                 .fontSize(20)
 
               Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
-              Row({ space: 35 }){
+              Row({ space: 35 }) {
                 Image($r('app.media.quick_mark'))
                   .width(160)
-                  .onClick(()=>{
-                    this.index.pushPath({name:'add_log'})
+                  .onClick(() => {
+                    this.index.pushPath({ name: 'add_log' })
                   })
                 Image($r('app.media.some_mark'))
                   .width(160)
-                  .onClick(()=>{
-                    this.index.pushPath({name:'log_search'})
+                  .onClick(() => {
+                    this.index.pushPath({ name: 'log_search' })
                   })
               }
+
               Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
-              Row({ space: 35 }){
+              Row({ space: 35 }) {
                 Image($r('app.media.sos'))
                   .width(160)
-                  .onClick(()=>{
+                  .onClick(() => {
                     try {
                       this.promptAction.showDialog({
                         title: '注意',
@@ -163,8 +162,8 @@ struct Index {
                           return;
                         }
                         console.info('showDialog success callback, click button: ' + data.index);
-                        if(data.index===0){
-                          this.index.pushPath({name:'MorseCodeConverter'})
+                        if (data.index === 0) {
+                          this.index.pushPath({ name: 'MorseCodeConverter' })
                         }
                       });
                     } catch (error) {
@@ -176,8 +175,8 @@ struct Index {
 
                 Image($r('app.media.sate'))
                   .width(160)
-                  .onClick(()=>{
-                    this.index.pushPath({name:'SatellitePassPage'})
+                  .onClick(() => {
+                    this.index.pushPath({ name: 'SatellitePassPage' })
                   })
               }
             }
@@ -187,8 +186,8 @@ struct Index {
           .tabBar("首页")
 
 
-          TabContent(){
-            Column({ space: 5 }){
+          TabContent() {
+            Column({ space: 5 }) {
               Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
               Text('基础知识')
                 .width('100%')
@@ -214,7 +213,7 @@ struct Index {
                       console.log(data.addressComponent?.adminLevel5)
                       console.log(String(data.zoom))
                       const locator = new MaidenheadLocator(data.location.longitude, data.location.latitude);
-                      this.locator=locator.toString()
+                      this.locator = locator.toString()
                       this.locationName = data.name as string;
                     })
                     .catch((err: BusinessError) => {
@@ -222,11 +221,12 @@ struct Index {
                         `Failed to choose location, code: ${err.code}, message: ${err.message}`);
                     });
                 })
-              if(this.locator!==''){
-                Row(){
+              if (this.locator !== '') {
+                Row() {
                   Text('选择的位置:')
                   Text(this.locationName)
                 }
+
                 Text('梅登海德网格定位结果:')
                 Text(this.locator)
               }
@@ -273,7 +273,7 @@ struct Index {
                 } else {
                   Text(this.callsign)
                     .fontSize(30)
-                    .margin({left:10})
+                    .margin({ left: 10 })
                 }
               }
               .onClick(() => {

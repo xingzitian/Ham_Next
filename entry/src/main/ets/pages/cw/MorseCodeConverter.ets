@@ -1,21 +1,64 @@
 // MorseCodeConverter.ets
 import audio from '@ohos.multimedia.audio';
 import { PromptAction } from '@kit.ArkUI';
-import { BusinessError } from '@ohos.base';
 import camera from '@ohos.multimedia.camera';
 
 // 摩尔斯电码映射表
 const MORSE_CODE_MAP: Record<string, string> = {
-  'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
-  'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..',
-  'M': '--', 'N': '-.', 'O': '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.',
-  'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
-  'Y': '-.--', 'Z': '--..', '0': '-----', '1': '.----', '2': '..---',
-  '3': '...--', '4': '....-', '5': '.....', '6': '-....', '7': '--...',
-  '8': '---..', '9': '----.', ' ': '/', '.': '.-.-.-', ',': '--..--',
-  '?': '..--..', "'": '.----.', '!': '-.-.--', '/': '-..-.', '(': '-.--.',
-  ')': '-.--.-', '&': '.-...', ':': '---...', ';': '-.-.-.', '=': '-...-',
-  '+': '.-.-.', '-': '-....-', '_': '..--.-', '"': '.-..-.', '$': '...-..-',
+  'A': '.-',
+  'B': '-...',
+  'C': '-.-.',
+  'D': '-..',
+  'E': '.',
+  'F': '..-.',
+  'G': '--.',
+  'H': '....',
+  'I': '..',
+  'J': '.---',
+  'K': '-.-',
+  'L': '.-..',
+  'M': '--',
+  'N': '-.',
+  'O': '---',
+  'P': '.--.',
+  'Q': '--.-',
+  'R': '.-.',
+  'S': '...',
+  'T': '-',
+  'U': '..-',
+  'V': '...-',
+  'W': '.--',
+  'X': '-..-',
+  'Y': '-.--',
+  'Z': '--..',
+  '0': '-----',
+  '1': '.----',
+  '2': '..---',
+  '3': '...--',
+  '4': '....-',
+  '5': '.....',
+  '6': '-....',
+  '7': '--...',
+  '8': '---..',
+  '9': '----.',
+  ' ': '/',
+  '.': '.-.-.-',
+  ',': '--..--',
+  '?': '..--..',
+  "'": '.----.',
+  '!': '-.-.--',
+  '/': '-..-.',
+  '(': '-.--.',
+  ')': '-.--.-',
+  '&': '.-...',
+  ':': '---...',
+  ';': '-.-.-.',
+  '=': '-...-',
+  '+': '.-.-.',
+  '-': '-....-',
+  '_': '..--.-',
+  '"': '.-..-.',
+  '$': '...-..-',
   '@': '.--.-.'
 };
 
@@ -41,8 +84,6 @@ interface MorseTiming {
 
 @Component
 export struct MorseCodeConverter {
-  private uiContext: UIContext = this.getUIContext();
-  private promptAction: PromptAction = this.uiContext.getPromptAction();
   @Consume('index') index: NavPathStack;
   // 状态变量
   @State inputText: string = '';
@@ -52,23 +93,20 @@ export struct MorseCodeConverter {
   @State wpm: number = 15;
   @State statusMessage: string = '准备就绪';
   @State isFlashlightOn: boolean = false;
-
+  private uiContext: UIContext = this.getUIContext();
+  private promptAction: PromptAction = this.uiContext.getPromptAction();
   // 音频渲染器和相关状态
   private audioRenderer: audio.AudioRenderer | null = null;
   private isAborted: boolean = false;
-
-  private stateChangeCallback: (state: audio.AudioState) => void = () => {};
   private currentAudioState: audio.AudioState = audio.AudioState.STATE_NEW;
   //手电筒相关
   private Context: Context | undefined = undefined;
   private torchSupport: boolean = false;
-
   // PCM数据管理
   private fullPcmData: ArrayBuffer | null = null;
   private pcmDataOffset: number = 0;
   private isPlaybackComplete: boolean = false;
   private allDataProvided: boolean = false;
-
   // 添加音频缓冲区大小常量
   private readonly BUFFER_SIZE: number = 4096; // 4KB缓冲区
 
@@ -156,170 +194,6 @@ export struct MorseCodeConverter {
     } catch (err) {
       console.error('初始化音频渲染器失败:', err.message, err.code);
       this.statusMessage = '音频初始化失败';
-    }
-  }
-
-  // 设置状态变化监听器
-  private setupStateChangeListener() {
-    if (!this.audioRenderer) return;
-
-    // 设置状态变化监听器
-    this.stateChangeCallback = (state: audio.AudioState) => {
-      console.log('音频渲染器状态变化:', this.currentAudioState, '->', state);
-      this.currentAudioState = state;
-
-      // 根据状态变化执行相应操作
-      this.handleStateChange(state);
-    };
-
-    this.audioRenderer.on('stateChange', this.stateChangeCallback);
-    console.log('状态变化监听器设置成功');
-  }
-
-  // 处理状态变化
-  private handleStateChange(state: audio.AudioState) {
-    switch (state) {
-      case audio.AudioState.STATE_RUNNING:
-        console.log('音频渲染器已启动');
-        break;
-
-      case audio.AudioState.STATE_STOPPED:
-        console.log('音频渲染器已停止');
-        // 停止播放后清理资源
-        this.cleanupAfterStop();
-        break;
-
-      case audio.AudioState.STATE_PAUSED:
-        console.log('音频渲染器已暂停');
-        break;
-
-      case audio.AudioState.STATE_RELEASED:
-        console.log('音频渲染器已释放');
-        break;
-
-      default:
-        console.log('未知音频渲染器状态:', state);
-    }
-  }
-
-  // 停止后清理资源
-  private cleanupAfterStop() {
-    this.isPlaying = false;
-    this.isPlaybackComplete = true;
-    this.allDataProvided = false;
-
-    // 释放PCM数据内存
-    this.fullPcmData = null;
-    this.pcmDataOffset = 0;
-
-    console.log('播放资源已清理');
-  }
-
-  // 生成单个符号的音频数据
-  private generateSymbolAudio(
-    view: DataView,
-    sampleOffset: number,
-    numSamples: number,
-    sampleRate: number,
-    amplitude: number,
-    isTone: boolean
-  ): void {
-    const byteOffset = sampleOffset * 4;
-
-    for (let i = 0; i < numSamples; i++) {
-      const value = isTone
-        ? amplitude * Math.sin(2 * Math.PI * this.frequency * i / sampleRate)
-        : 0;
-      view.setFloat32(byteOffset + i * 4, value, true);
-    }
-  }
-
-  // writeData事件回调
-  private writeDataCallback = (buffer: ArrayBuffer): audio.AudioDataCallbackResult => {
-    if (!this.fullPcmData) {
-      console.log('没有PCM数据可提供');
-      // 填充静音数据
-      this.fillSilence(buffer);
-      return audio.AudioDataCallbackResult.INVALID;
-    }
-
-    // 如果已经标记为播放完成，不再提供数据
-    if (this.isPlaybackComplete) {
-      console.log('播放已完成，不再提供数据');
-      this.fillSilence(buffer);
-      return audio.AudioDataCallbackResult.INVALID;
-    }
-
-    const outputView = new DataView(buffer);
-    const remainingData = this.fullPcmData.byteLength - this.pcmDataOffset;
-    const bytesToCopy = Math.min(remainingData, buffer.byteLength);
-
-    if (bytesToCopy > 0) {
-      // 从预生成的PCM数据复制到输出缓冲区
-      const sourceView = new DataView(this.fullPcmData, this.pcmDataOffset, bytesToCopy);
-
-      // 使用更高效的数据复制方式
-      for (let i = 0; i < bytesToCopy; i += 4) {
-        outputView.setFloat32(i, sourceView.getFloat32(i, true), true);
-      }
-
-      // 如果缓冲区未填满，剩余部分填充静音
-      if (bytesToCopy < buffer.byteLength) {
-        for (let i = bytesToCopy; i < buffer.byteLength; i += 4) {
-          outputView.setFloat32(i, 0, true);
-        }
-      }
-
-      this.pcmDataOffset += bytesToCopy;
-      console.log(`已提供 ${bytesToCopy} 字节数据，总进度: ${this.pcmDataOffset}/${this.fullPcmData.byteLength}`);
-
-      // 检查是否所有数据都已提供
-      if (this.pcmDataOffset >= this.fullPcmData.byteLength) {
-        console.log('所有数据已提供，等待播放完成');
-        this.allDataProvided = true;
-      }
-
-      return audio.AudioDataCallbackResult.VALID;
-    } else if (this.allDataProvided) {
-      // 所有数据已提供且已复制完毕，现在可以标记为播放完成
-      console.log('所有数据已播放完毕');
-      this.finishPlayback();
-      this.fillSilence(buffer);
-      return audio.AudioDataCallbackResult.INVALID;
-    }
-
-    // 没有数据可提供时填充静音
-    this.fillSilence(buffer);
-    return audio.AudioDataCallbackResult.INVALID;
-  };
-
-  // 填充静音数据的辅助方法
-  private fillSilence(buffer: ArrayBuffer): void {
-    const view = new DataView(buffer);
-    for (let i = 0; i < buffer.byteLength; i += 4) {
-      view.setFloat32(i, 0, true);
-    }
-  }
-
-
-  // 完成播放处理
-  private finishPlayback(): void {
-    // 确保只执行一次完成操作
-    if (this.isPlaybackComplete) return;
-
-    console.log('播放完成');
-    this.isPlaying = false;
-    this.isPlaybackComplete = true;
-    this.allDataProvided = false;
-    this.statusMessage = '播放完成';
-
-    // 释放PCM数据内存
-    this.fullPcmData = null;
-    this.pcmDataOffset = 0;
-
-    // 移除writeData回调，避免后续调用
-    if (this.audioRenderer) {
-      this.audioRenderer.off('writeData');
     }
   }
 
@@ -565,7 +439,9 @@ export struct MorseCodeConverter {
 
       // 同步控制闪光灯
       for (let i = 0; i < commands.length; i++) {
-        if (!this.isPlaying) break; // 允许中途停止
+        if (!this.isPlaying) {
+          break;
+        } // 允许中途停止
 
         const command = commands[i];
 
@@ -714,80 +590,6 @@ export struct MorseCodeConverter {
     console.log('播放已停止');
   }
 
-  // 生成完整的PCM音频数据 - 改进版本
-  private generateFullPcmData(): ArrayBuffer {
-    console.log('生成完整的PCM音频数据');
-    const timing = this.getTimingParameters(this.wpm);
-    const sampleRate = 48000;
-    const amplitude = 0.5;
-
-    // 计算总样本数
-    let totalSamples = 0;
-    for (const symbol of this.morseCode) {
-      let duration: number;
-      switch (symbol) {
-        case '.': duration = timing.dotLength; break;
-        case '-': duration = timing.dashLength; break;
-        case ' ': duration = timing.interCharGap; break;
-        case '/': duration = timing.wordGap; break;
-        default: duration = 0;
-      }
-      totalSamples += Math.floor(duration / 1000 * sampleRate);
-    }
-
-    // 关键修复：添加前导静音，确保音频渲染器有足够时间初始化
-    const LEAD_SILENCE_SAMPLES = Math.floor(50 / 1000 * sampleRate); // 50ms静音
-    totalSamples += LEAD_SILENCE_SAMPLES;
-
-    console.log(`总样本数: ${totalSamples}`);
-    const buffer = new ArrayBuffer(totalSamples * 4);
-    const view = new DataView(buffer);
-    let sampleOffset = 0;
-
-    // 关键修复：添加前导静音
-    for (let i = 0; i < LEAD_SILENCE_SAMPLES; i++) {
-      view.setFloat32(sampleOffset * 4, 0, true);
-      sampleOffset++;
-    }
-
-    // 生成所有音频数据
-    for (const symbol of this.morseCode) {
-      let duration: number;
-      let isTone: boolean = false;
-
-      switch (symbol) {
-        case '.':
-          duration = timing.dotLength;
-          isTone = true;
-          break;
-        case '-':
-          duration = timing.dashLength;
-          isTone = true;
-          break;
-        case ' ':
-          duration = timing.interCharGap;
-          isTone = false;
-          break;
-        case '/':
-          duration = timing.wordGap;
-          isTone = false;
-          break;
-        default:
-          duration = 0;
-          isTone = false;
-      }
-
-      if (duration > 0) {
-        const numSamples = Math.floor(duration / 1000 * sampleRate);
-        this.generateSymbolAudio(view, sampleOffset, numSamples, sampleRate, amplitude, isTone);
-        sampleOffset += numSamples;
-      }
-    }
-
-    console.log(`PCM数据生成完成，总大小: ${buffer.byteLength} 字节`);
-    return buffer;
-  }
-
   // 清空所有内容
   clearAll() {
     this.inputText = '';
@@ -922,5 +724,258 @@ export struct MorseCodeConverter {
       this.index.pop()
       return true
     })
+  }
+
+  private stateChangeCallback: (state: audio.AudioState) => void = () => {
+  };
+
+  // 设置状态变化监听器
+  private setupStateChangeListener() {
+    if (!this.audioRenderer) {
+      return;
+    }
+
+    // 设置状态变化监听器
+    this.stateChangeCallback = (state: audio.AudioState) => {
+      console.log('音频渲染器状态变化:', this.currentAudioState, '->', state);
+      this.currentAudioState = state;
+
+      // 根据状态变化执行相应操作
+      this.handleStateChange(state);
+    };
+
+    this.audioRenderer.on('stateChange', this.stateChangeCallback);
+    console.log('状态变化监听器设置成功');
+  }
+
+  // 处理状态变化
+  private handleStateChange(state: audio.AudioState) {
+    switch (state) {
+      case audio.AudioState.STATE_RUNNING:
+        console.log('音频渲染器已启动');
+        break;
+
+      case audio.AudioState.STATE_STOPPED:
+        console.log('音频渲染器已停止');
+        // 停止播放后清理资源
+        this.cleanupAfterStop();
+        break;
+
+      case audio.AudioState.STATE_PAUSED:
+        console.log('音频渲染器已暂停');
+        break;
+
+      case audio.AudioState.STATE_RELEASED:
+        console.log('音频渲染器已释放');
+        break;
+
+      default:
+        console.log('未知音频渲染器状态:', state);
+    }
+  }
+
+  // 停止后清理资源
+  private cleanupAfterStop() {
+    this.isPlaying = false;
+    this.isPlaybackComplete = true;
+    this.allDataProvided = false;
+
+    // 释放PCM数据内存
+    this.fullPcmData = null;
+    this.pcmDataOffset = 0;
+
+    console.log('播放资源已清理');
+  }
+
+  // 生成单个符号的音频数据
+  private generateSymbolAudio(
+    view: DataView,
+    sampleOffset: number,
+    numSamples: number,
+    sampleRate: number,
+    amplitude: number,
+    isTone: boolean
+  ): void {
+    const byteOffset = sampleOffset * 4;
+
+    for (let i = 0; i < numSamples; i++) {
+      const value = isTone
+        ? amplitude * Math.sin(2 * Math.PI * this.frequency * i / sampleRate)
+        : 0;
+      view.setFloat32(byteOffset + i * 4, value, true);
+    }
+  }
+
+  // writeData事件回调
+  private writeDataCallback = (buffer: ArrayBuffer): audio.AudioDataCallbackResult => {
+    if (!this.fullPcmData) {
+      console.log('没有PCM数据可提供');
+      // 填充静音数据
+      this.fillSilence(buffer);
+      return audio.AudioDataCallbackResult.INVALID;
+    }
+
+    // 如果已经标记为播放完成，不再提供数据
+    if (this.isPlaybackComplete) {
+      console.log('播放已完成，不再提供数据');
+      this.fillSilence(buffer);
+      return audio.AudioDataCallbackResult.INVALID;
+    }
+
+    const outputView = new DataView(buffer);
+    const remainingData = this.fullPcmData.byteLength - this.pcmDataOffset;
+    const bytesToCopy = Math.min(remainingData, buffer.byteLength);
+
+    if (bytesToCopy > 0) {
+      // 从预生成的PCM数据复制到输出缓冲区
+      const sourceView = new DataView(this.fullPcmData, this.pcmDataOffset, bytesToCopy);
+
+      // 使用更高效的数据复制方式
+      for (let i = 0; i < bytesToCopy; i += 4) {
+        outputView.setFloat32(i, sourceView.getFloat32(i, true), true);
+      }
+
+      // 如果缓冲区未填满，剩余部分填充静音
+      if (bytesToCopy < buffer.byteLength) {
+        for (let i = bytesToCopy; i < buffer.byteLength; i += 4) {
+          outputView.setFloat32(i, 0, true);
+        }
+      }
+
+      this.pcmDataOffset += bytesToCopy;
+      console.log(`已提供 ${bytesToCopy} 字节数据，总进度: ${this.pcmDataOffset}/${this.fullPcmData.byteLength}`);
+
+      // 检查是否所有数据都已提供
+      if (this.pcmDataOffset >= this.fullPcmData.byteLength) {
+        console.log('所有数据已提供，等待播放完成');
+        this.allDataProvided = true;
+      }
+
+      return audio.AudioDataCallbackResult.VALID;
+    } else if (this.allDataProvided) {
+      // 所有数据已提供且已复制完毕，现在可以标记为播放完成
+      console.log('所有数据已播放完毕');
+      this.finishPlayback();
+      this.fillSilence(buffer);
+      return audio.AudioDataCallbackResult.INVALID;
+    }
+
+    // 没有数据可提供时填充静音
+    this.fillSilence(buffer);
+    return audio.AudioDataCallbackResult.INVALID;
+  };
+
+  // 填充静音数据的辅助方法
+  private fillSilence(buffer: ArrayBuffer): void {
+    const view = new DataView(buffer);
+    for (let i = 0; i < buffer.byteLength; i += 4) {
+      view.setFloat32(i, 0, true);
+    }
+  }
+
+  // 完成播放处理
+  private finishPlayback(): void {
+    // 确保只执行一次完成操作
+    if (this.isPlaybackComplete) {
+      return;
+    }
+
+    console.log('播放完成');
+    this.isPlaying = false;
+    this.isPlaybackComplete = true;
+    this.allDataProvided = false;
+    this.statusMessage = '播放完成';
+
+    // 释放PCM数据内存
+    this.fullPcmData = null;
+    this.pcmDataOffset = 0;
+
+    // 移除writeData回调，避免后续调用
+    if (this.audioRenderer) {
+      this.audioRenderer.off('writeData');
+    }
+  }
+
+  // 生成完整的PCM音频数据 - 改进版本
+  private generateFullPcmData(): ArrayBuffer {
+    console.log('生成完整的PCM音频数据');
+    const timing = this.getTimingParameters(this.wpm);
+    const sampleRate = 48000;
+    const amplitude = 0.5;
+
+    // 计算总样本数
+    let totalSamples = 0;
+    for (const symbol of this.morseCode) {
+      let duration: number;
+      switch (symbol) {
+        case '.':
+          duration = timing.dotLength;
+          break;
+        case '-':
+          duration = timing.dashLength;
+          break;
+        case ' ':
+          duration = timing.interCharGap;
+          break;
+        case '/':
+          duration = timing.wordGap;
+          break;
+        default:
+          duration = 0;
+      }
+      totalSamples += Math.floor(duration / 1000 * sampleRate);
+    }
+
+    // 关键修复：添加前导静音，确保音频渲染器有足够时间初始化
+    const LEAD_SILENCE_SAMPLES = Math.floor(50 / 1000 * sampleRate); // 50ms静音
+    totalSamples += LEAD_SILENCE_SAMPLES;
+
+    console.log(`总样本数: ${totalSamples}`);
+    const buffer = new ArrayBuffer(totalSamples * 4);
+    const view = new DataView(buffer);
+    let sampleOffset = 0;
+
+    // 关键修复：添加前导静音
+    for (let i = 0; i < LEAD_SILENCE_SAMPLES; i++) {
+      view.setFloat32(sampleOffset * 4, 0, true);
+      sampleOffset++;
+    }
+
+    // 生成所有音频数据
+    for (const symbol of this.morseCode) {
+      let duration: number;
+      let isTone: boolean = false;
+
+      switch (symbol) {
+        case '.':
+          duration = timing.dotLength;
+          isTone = true;
+          break;
+        case '-':
+          duration = timing.dashLength;
+          isTone = true;
+          break;
+        case ' ':
+          duration = timing.interCharGap;
+          isTone = false;
+          break;
+        case '/':
+          duration = timing.wordGap;
+          isTone = false;
+          break;
+        default:
+          duration = 0;
+          isTone = false;
+      }
+
+      if (duration > 0) {
+        const numSamples = Math.floor(duration / 1000 * sampleRate);
+        this.generateSymbolAudio(view, sampleOffset, numSamples, sampleRate, amplitude, isTone);
+        sampleOffset += numSamples;
+      }
+    }
+
+    console.log(`PCM数据生成完成，总大小: ${buffer.byteLength} 字节`);
+    return buffer;
   }
 }

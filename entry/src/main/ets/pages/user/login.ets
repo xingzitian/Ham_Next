@@ -5,7 +5,6 @@ import { LoadingDialog, promptAction, PromptAction } from '@kit.ArkUI';
 //完成
 
 
-
 @Component
 export struct login {
   private uiContext: UIContext = this.getUIContext();
@@ -16,24 +15,24 @@ export struct login {
     }),
   })
   @Consume('index') index: NavPathStack;
-
-  @State password:string='';
+  @State password: string = '';
   @StorageLink('token') token: string = '';
   @StorageLink('callsign') callsign: string = '';
+
   async http_login_request() {
     try {
       const response =
-        await http_id.httpRequest(2,this.password,this.callsign);
+        await http_id.httpRequest(2, this.password, this.callsign);
 
       setTimeout(() => {
         this.dialogControllerProgress.close()
         if (response.success === true) {
           this.promptAction.showToast({
-            message:'登录成功'
+            message: '登录成功'
           });
-          this.token=response.data.token
-          this.callsign=response.data.user.callsign
-          console.log("获取到的呼号："+this.callsign)
+          this.token = response.data.token
+          this.callsign = response.data.user.callsign
+          console.log("获取到的呼号：" + this.callsign)
           this.index.pop()
         }
       }, 500);
@@ -42,9 +41,9 @@ export struct login {
       setTimeout(() => {
         this.dialogControllerProgress.close()
       }, 500);
-      if(error===401){
+      if (error === 401) {
         this.promptAction.showToast({
-          message:'登录失败，呼号或密码错误'
+          message: '登录失败，呼号或密码错误'
         });
       }
     }
@@ -80,7 +79,7 @@ export struct login {
       .alignItems(HorizontalAlign.Start)
       .width('90%')
 
-      Column({space:25}) {
+      Column({ space: 25 }) {
         Row() {
           Button('登录')
             .width(150)
@@ -89,6 +88,7 @@ export struct login {
               this.dialogControllerProgress.open()
             })
         }
+
         Row() {
           Button('前往注册')
             .width(150)
@@ -97,7 +97,7 @@ export struct login {
             })
         }
       }
-      .margin({top:25})
+      .margin({ top: 25 })
       .alignItems(HorizontalAlign.Center)
 
     }

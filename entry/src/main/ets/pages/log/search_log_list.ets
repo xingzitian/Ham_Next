@@ -1,12 +1,11 @@
 import { http_list_logs, res_log_list, rx_log } from '../http_server/httpService';
 import { UIPagination } from '@hw-agconnect/ui-pagination';
 import { PromptAction } from '@kit.ArkUI';
+
 @Component
 export struct log_search {
-
   private uiContext: UIContext = this.getUIContext();
   private promptAction: PromptAction = this.uiContext.getPromptAction();
-
   @State log_list: res_log_list = {
     success: false,
     message: '',
@@ -17,14 +16,14 @@ export struct log_search {
         timestamp: '',
         frequency: 0,
         mode: '',
-        sentReport:'',
+        sentReport: '',
         receivedReport: '',
         notes: '',
         user_id: 0,
         createdAt: '',
-        updatedAt:'',
+        updatedAt: '',
       }],
-      pagination:{
+      pagination: {
         currentPage: 0,
         totalPages: 0,
         totalCount: 0,
@@ -42,32 +41,32 @@ export struct log_search {
   @State date: string = '获取时间';
   @State mode: string = '选择模式';
   @State contactCallsign: string = '';
-
-  @State min_Frequency_text:string=''
-  @State max_Frequency_text:string=''
-  @State total:number=0
+  @State min_Frequency_text: string = ''
+  @State max_Frequency_text: string = ''
+  @State total: number = 0
   private fruits: TextCascadePickerRangeContent[] = [
     {
       text: '语音模式',
-      children: [{ text: 'SSB' },{ text: 'FM' },{ text: 'AM' },{ text: 'FSK' }]
-    },    {
+      children: [{ text: 'SSB' }, { text: 'FM' }, { text: 'AM' }, { text: 'FSK' }]
+    }, {
     text: 'CW'
-  },    {
+  }, {
     text: '数字模式',
-    children: [{ text: 'FT8' },{ text: 'RTTY' },{ text: 'APRS' }]
+    children: [{ text: 'FT8' }, { text: 'RTTY' }, { text: 'APRS' }]
   },
     {
       text: '图像模式',
       children: [{ text: 'SSTV' }]
     },
   ];
-  private select : number  = 0;
+  private select: number = 0;
 
   aboutToAppear(): void {
-    this.http_log_search(0,this.start_page,this.token);
+    this.http_log_search(0, this.start_page, this.token);
   }
 
-  async http_log_search(use:number,page:number, token: string,date?:string,mode?:string,contactCallsign?:string,minFrequency?:number,maxFrequency?:number) {
+  async http_log_search(use: number, page: number, token: string, date?: string, mode?: string,
+    contactCallsign?: string, minFrequency?: number, maxFrequency?: number) {
     try {
       this.log_list = {
         success: false,
@@ -79,14 +78,14 @@ export struct log_search {
             timestamp: '',
             frequency: 0,
             mode: '',
-            sentReport:'',
+            sentReport: '',
             receivedReport: '',
             notes: '',
             user_id: 0,
             createdAt: '',
-            updatedAt:'',
+            updatedAt: '',
           }],
-          pagination:{
+          pagination: {
             currentPage: 0,
             totalPages: 0,
             totalCount: 0,
@@ -96,31 +95,31 @@ export struct log_search {
         }
       }
 
-      let extar:string=''
-      if (date!=='获取时间'){
-        extar=extar+'&date='+date
+      let extar: string = ''
+      if (date !== '获取时间') {
+        extar = extar + '&date=' + date
       }
-      if (mode!=='选择模式'){
-        extar=extar+'&mode='+mode
+      if (mode !== '选择模式') {
+        extar = extar + '&mode=' + mode
       }
-      if (minFrequency!==-1){
-        extar=extar+'&minFrequency='+minFrequency
+      if (minFrequency !== -1) {
+        extar = extar + '&minFrequency=' + minFrequency
       }
-      if (maxFrequency!==-1){
-        extar=extar+'&maxFrequency='+maxFrequency
+      if (maxFrequency !== -1) {
+        extar = extar + '&maxFrequency=' + maxFrequency
       }
-      if (contactCallsign!==''){
-        extar=extar+'&contactCallsign='+contactCallsign
+      if (contactCallsign !== '') {
+        extar = extar + '&contactCallsign=' + contactCallsign
       }
-      console.log("查询请求时的页码："+page)
-      console.log("查询请求时的url："+extar)
+      console.log("查询请求时的页码：" + page)
+      console.log("查询请求时的url：" + extar)
       const response =
-        await http_list_logs.httpRequest(use,page, token,extar);
+        await http_list_logs.httpRequest(use, page, token, extar);
       this.log_list = response
-      this.total=this.log_list.data.pagination.totalCount
+      this.total = this.log_list.data.pagination.totalCount
 
       this.promptAction.showToast({
-        message: '查询成功，共计'+this.total+"条",
+        message: '查询成功，共计' + this.total + "条",
         duration: 2000
       })
 
@@ -137,7 +136,7 @@ export struct log_search {
     NavDestination() {
       Column() {
         Column({ space: 6 }) {
-          TextInput({ placeholder: '输入对方呼号或选择简单筛选',text:this.contactCallsign })
+          TextInput({ placeholder: '输入对方呼号或选择简单筛选', text: this.contactCallsign })
             .borderRadius(20)
             .backgroundColor($r('sys.color.background_tertiary'))
             .height(50)
@@ -180,7 +179,7 @@ export struct log_search {
           }
 
           Row() {
-            TextInput({ placeholder: "频率下限", text:this.min_Frequency_text})
+            TextInput({ placeholder: "频率下限", text: this.min_Frequency_text })
               .backgroundColor($r('sys.color.background_tertiary'))
               .fontWeight(FontWeight.Medium)
               .textAlign(TextAlign.Center)
@@ -188,10 +187,10 @@ export struct log_search {
               .width('40%')
               .onChange((minFrequency: string) => {
                 this.minFrequency = Number(minFrequency)
-                this.min_Frequency_text=minFrequency
+                this.min_Frequency_text = minFrequency
               })
 
-            TextInput({ placeholder: "频率上限" , text:this.max_Frequency_text})
+            TextInput({ placeholder: "频率上限", text: this.max_Frequency_text })
               .backgroundColor($r('sys.color.background_tertiary'))
               .fontWeight(FontWeight.Medium)
               .textAlign(TextAlign.Center)
@@ -199,7 +198,7 @@ export struct log_search {
               .width('40%')
               .onChange((maxFrequency: string) => {
                 this.maxFrequency = Number(maxFrequency)
-                this.max_Frequency_text=maxFrequency
+                this.max_Frequency_text = maxFrequency
               })
           }
 
@@ -210,13 +209,13 @@ export struct log_search {
               .onClick(() => {
                 this.date = '获取时间';
                 this.mode = '选择模式';
-                this.start_page=1
-                this.minFrequency=-1
-                this.maxFrequency=-1
-                this.contactCallsign=''
-                this.min_Frequency_text=''
-                this.max_Frequency_text=''
-                this.http_log_search(0,this.start_page,this.token);
+                this.start_page = 1
+                this.minFrequency = -1
+                this.maxFrequency = -1
+                this.contactCallsign = ''
+                this.min_Frequency_text = ''
+                this.max_Frequency_text = ''
+                this.http_log_search(0, this.start_page, this.token);
 
               })
 
@@ -230,7 +229,7 @@ export struct log_search {
           }
 
           List({ space: 10 }) {
-            if(this.log_list.success!==false){
+            if (this.log_list.success !== false) {
               ForEach(this.log_list.data.logs, (item: rx_log) => {
                 ListItem() {
                   Column() {
@@ -265,11 +264,12 @@ export struct log_search {
 
         UIPagination({
           currentPage: this.start_page,
-          total:this.total ,
-          pageSize:5,
+          total: this.total,
+          pageSize: 5,
           change: (currentV: number) => {
             this.start_page = currentV;
-            this.http_log_search(1, this.start_page, this.token, this.date, this.mode, this.contactCallsign,this.minFrequency, this.maxFrequency)
+            this.http_log_search(1, this.start_page, this.token, this.date, this.mode, this.contactCallsign,
+              this.minFrequency, this.maxFrequency)
             console.log("页面切换")
           }
         })

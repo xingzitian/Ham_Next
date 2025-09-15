@@ -6,11 +6,12 @@ import { UIPagination } from '@hw-agconnect/ui-pagination';
 import { geoLocationManager } from '@kit.LocationKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import abilityAccessCtrl from '@ohos.abilityAccessCtrl';
+
 // 卫星过境信息接口
 interface SatellitePassInfo {
   noradId: number;
   name: string;
-  pass_number:number;
+  pass_number: number;
   startTime: string;
   endTime: string;
   maxElevation: number;
@@ -28,7 +29,6 @@ export struct SatellitePassPage {
   private promptAction: PromptAction = this.uiContext.getPromptAction();
   private atManager: abilityAccessCtrl.AtManager = abilityAccessCtrl.createAtManager();
   @Consume('index') index: NavPathStack;
-
   // 新增状态：搜索关键词
   @State searchKeyword: string = '';
   // 新增状态：是否正在搜索
@@ -36,9 +36,8 @@ export struct SatellitePassPage {
   // 新增状态：搜索结果的卫星列表
   @State searchResults: SatelliteTLE[] = [];
   @State displayList: SatelliteTLE[] = [];
-  @State search:string=''
-
-  @State start_page:number=1
+  @State search: string = ''
+  @State start_page: number = 1
   // 卫星列表（从后端获取）
   @StorageProp('satelliteList') satelliteList: SatelliteTLE[] = [];
   @State satelliteList_copy: SatelliteTLE[] = [];
@@ -49,11 +48,11 @@ export struct SatellitePassPage {
   // 加载状态
   @State isLoading: boolean = false;
   // 用户位置（默认为北京）
-  @StorageLink('NORAD_ID')NORAD_ID:number=0
+  @StorageLink('NORAD_ID') NORAD_ID: number = 0
   @StorageLink('lat') lat: number = 0
   @StorageLink('lng') lng: number = 0
   @StorageLink('alt') alt: number = 0
-  @StorageLink('start_time')start_time:string=''
+  @StorageLink('start_time') start_time: string = ''
   @StorageLink('duration') duration: number = 0
   // 天数限制
   @State daysLimit: number = 2;
@@ -65,7 +64,6 @@ export struct SatellitePassPage {
   @State nextPassCountdown: string = '';
   // 计时器ID
   private countdownTimer: number = 0;
-
 
   // 组件生命周期
   aboutToAppear() {
@@ -85,7 +83,7 @@ export struct SatellitePassPage {
   private requestSensorPermissions(): void {
     try {
       this.atManager.requestPermissionsFromUser(this.context, [
-        'ohos.permission.APPROXIMATELY_LOCATION','ohos.permission.LOCATION'
+        'ohos.permission.APPROXIMATELY_LOCATION', 'ohos.permission.LOCATION'
       ]).then((data) => {
         console.info('权限申请结果: ' + JSON.stringify(data));
 
@@ -106,29 +104,29 @@ export struct SatellitePassPage {
   // 获取用户位置
   private async getUserLocation(): Promise<void> {
 
-    let locationChange = (err:BusinessError, location:geoLocationManager.Location) => {
+    let locationChange = (err: BusinessError, location: geoLocationManager.Location) => {
       if (err) {
         console.error('locationChange: err=' + JSON.stringify(err));
       }
       if (location) {
         console.info('locationChange: location=' + JSON.stringify(location));
-        this.lat=location.latitude
-        this.lng=location.longitude
-        this.alt=location.altitude || 0
+        this.lat = location.latitude
+        this.lng = location.longitude
+        this.alt = location.altitude || 0
       }
     };
 
     try {
       geoLocationManager.getCurrentLocation(locationChange);
     } catch (err) {
-      console.error("errCode:" + err.code + ", message:"  + err.message);
+      console.error("errCode:" + err.code + ", message:" + err.message);
     }
   }
 
-  private async satelliteList_cp(true_total:number): Promise<void> {
+  private async satelliteList_cp(true_total: number): Promise<void> {
     try {
-      this.satelliteList_copy=[]
-      this.satelliteList_copy=this.satelliteList.slice(true_total-100, true_total);
+      this.satelliteList_copy = []
+      this.satelliteList_copy = this.satelliteList.slice(true_total - 100, true_total);
       // for(let i=true_total-100;i<true_total;i+=1){
       //   this.satelliteList_copy.push(this.satelliteList[i])
       // }
@@ -137,7 +135,6 @@ export struct SatellitePassPage {
       console.error('更新卫星列表错误:', error);
     }
   }
-
 
   // 添加卫星到选择列表
   private addSatellite(satellite: SatelliteTLE): void {
@@ -185,7 +182,7 @@ export struct SatellitePassPage {
             this.passResults = [...this.passResults, {
               noradId: satellite.norad_id,
               name: satellite.name,
-              pass_number:pass.pass_number,
+              pass_number: pass.pass_number,
               startTime: pass.start_time,
               endTime: pass.end_time,
               maxElevation: pass.max_elevation,
@@ -222,7 +219,7 @@ export struct SatellitePassPage {
     // 设置新的计时器，每秒更新一次
     this.countdownTimer = setInterval(() => {
       this.updateCountdown();
-    }, 1000)  as number;
+    }, 1000) as number;
 
     // 立即更新一次
     this.updateCountdown();
@@ -268,8 +265,6 @@ export struct SatellitePassPage {
     }
   }
 
-
-
   // 正确地将UTC时间转换为中国时间（UTC+8）
   private convertUTCToChinaTime(utcTime: string): string {
     const date = new Date(utcTime);
@@ -282,14 +277,20 @@ export struct SatellitePassPage {
   private formatTime(timeString: string): string {
     const chinaTime = this.convertUTCToChinaTime(timeString);
     const date = new Date(chinaTime);
-    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
+    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes()
+      .toString()
+      .padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
   }
 
   // 格式化日期时间显示（完整格式）
   private formatDateTime(timeString: string): string {
     const chinaTime = this.convertUTCToChinaTime(timeString);
     const date = new Date(chinaTime);
-    return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
+    return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate()
+      .toString()
+      .padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes()
+      .toString()
+      .padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
   }
 
   // 新增方法：更新显示列表
@@ -365,7 +366,7 @@ export struct SatellitePassPage {
         // 查询条件区域
         Row() {
           // 天数限制输入框
-          TextInput({ placeholder: "查询天数", text:String(this.daysLimit)})
+          TextInput({ placeholder: "查询天数", text: String(this.daysLimit) })
             .type(InputType.Number)
             .width('40%')
             .margin(8)
@@ -380,7 +381,7 @@ export struct SatellitePassPage {
             })
 
           // 最低仰角输入框
-          TextInput({ placeholder: "最低仰角" ,text:String(this.minElevation)})
+          TextInput({ placeholder: "最低仰角", text: String(this.minElevation) })
             .type(InputType.Number)
             .width('40%')
             .margin(8)
@@ -411,7 +412,7 @@ export struct SatellitePassPage {
             .backgroundColor($r('sys.color.brand'))
             .fontColor($r('sys.color.comp_common_contrary'))
             .margin({ right: 8 })
-            .onClick(()=>{
+            .onClick(() => {
               this.getUserLocation()
             })
 
@@ -441,7 +442,7 @@ export struct SatellitePassPage {
         .width('90%')
         .margin({ bottom: 12 })
 
-        Text('纬度:'+this.lat.toFixed(4)+'经度:'+this.lng.toFixed(4))
+        Text('纬度:' + this.lat.toFixed(4) + '经度:' + this.lng.toFixed(4))
           .fontSize(18)
           .fontColor($r('sys.color.brand'))
           .fontWeight(FontWeight.Bold)
@@ -463,7 +464,7 @@ export struct SatellitePassPage {
                     .fontColor($r('sys.color.font_primary'))
                     .layoutWeight(1)
 
-                  Text(){
+                  Text() {
                     SymbolSpan($r('sys.symbol.trash'))
                       .fontWeight(FontWeight.Normal)
                       .renderingStrategy(SymbolRenderingStrategy.SINGLE)
@@ -506,7 +507,7 @@ export struct SatellitePassPage {
         // 结果列表
         List() {
           ForEach(this.passResults, (passInfo: SatellitePassInfo) => {
-            ListItem(){
+            ListItem() {
               Column() {
                 // 卫星名称和NORAD ID
                 Row() {
@@ -554,11 +555,11 @@ export struct SatellitePassPage {
                   .height(36)
                   .backgroundColor($r('sys.color.brand'))
                   .fontColor($r('sys.color.comp_common_contrary'))
-                  .onClick(()=>{
+                  .onClick(() => {
                     AppStorage.setOrCreate('NEXT_PASS_TIME', passInfo.startTime);
-                    this.NORAD_ID=passInfo.noradId
-                    this.start_time=passInfo.startTime
-                    this.duration=passInfo.duration
+                    this.NORAD_ID = passInfo.noradId
+                    this.start_time = passInfo.startTime
+                    this.duration = passInfo.duration
                     AppStorage.setOrCreate('SATELLITE_NAME', passInfo.name);
                     this.index.pushPath({ name: 'SatelliteRadar' })
                   })
@@ -593,7 +594,7 @@ export struct SatellitePassPage {
                 .fontColor($r('sys.color.font_primary'))
                 .border({ width: 1, color: $r('sys.color.comp_divider'), radius: 4 })
                 .onChange((value: string) => {
-                  this.search=value
+                  this.search = value
                 })
 
               // 清空搜索按钮
@@ -607,7 +608,7 @@ export struct SatellitePassPage {
                 .onClick(() => {
                   this.clearSearch();
                 })
-              }else{
+              } else {
                 Text() {
                   SymbolSpan($r('sys.symbol.magnifyingglass'))
                     .fontSize(20)
@@ -619,7 +620,12 @@ export struct SatellitePassPage {
                 })
               }
             }
-            .padding({ top: 20, bottom: 10, left: 16, right: 16 })
+            .padding({
+              top: 20,
+              bottom: 10,
+              left: 16,
+              right: 16
+            })
 
             // 显示搜索提示或结果数量
             if (this.isSearching) {
