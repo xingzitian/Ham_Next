@@ -2,10 +2,6 @@ import { http_log_add, tx_log } from '../http_server/httpService';
 import { sceneMap } from '@kit.MapKit';
 import { LoadingDialog, PromptAction } from '@kit.ArkUI';
 
-//单文件项目标识add_logs
-//完成
-
-
 let locationChoosingOptions: sceneMap.LocationChoosingOptions = {
   // 地图中心点坐标
   //location: { latitude: 39.92194051376904, longitude: 116.3971836796932 },

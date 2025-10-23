@@ -1,26 +1,31 @@
-import { add_log } from './log/add_logs'
-import { login } from './user/login'
-import { register } from './user/register'
-import { log_search } from './log/search_log_list'
-import { log_info } from './log/log_info'
-import { about } from './about/about'
-import { base_index1, base_index2, base_index3 } from './cw/base_info'
-import { base_info_1, base_info_2, base_info_3 } from './cw/cq_info'
-import { MaidenheadLocator } from './cw/base_resource'
-import { MorseCodeConverter } from './cw/MorseCodeConverter'
-import { MorseMinimalPractice } from './cw/MorseMinimalPractice'
-
-import { SatellitePassPage } from './Satellite/Satellite_index'
-import { SatelliteRadar } from './Satellite/Radar'
-
-import { MorseTraining } from './cw/MorseTraining'
-import { sstv_1 } from './cw/sstv/1'
-import { beian_web_page, private_cq_web_page, private_huawei_web_page, } from './about/Web_page'
-
 import { sceneMap } from '@kit.MapKit'
 import { BusinessError } from '@kit.BasicServicesKit'
 import { common } from '@kit.AbilityKit'
-import { PromptAction } from '@kit.ArkUI'
+import { LoadingDialog, PromptAction } from '@kit.ArkUI'
+
+import { login, register } from './user/user_ctrl'
+
+import { add_log } from './log/add_logs'
+import { log_search } from './log/search_log_list'
+import { log_info } from './log/log_info'
+
+import { base_index1, base_index2, base_index3 } from './cw/base_info'
+import { base_info_1, base_info_2, base_info_3 } from './cw/cq_info'
+import { MaidenheadLocator } from './cw/base_resource'
+
+import { MorseCodeConverter } from './cw/MorseCodeConverter'
+import { MorseMinimalPractice } from './cw/MorseMinimalPractice'
+import { MorseTraining } from './cw/MorseTraining'
+
+import { Satellite_index } from './Satellite/Satellite_index'
+import { SatelliteRadar } from './Satellite/Radar'
+import { SatelliteService } from '../pages/http_server/SatelliteService'
+import { satellite_db_control } from './Satellite/Satellite_db'
+
+import { sstv_1 } from './cw/sstv/1'
+
+import { beian_web_page, private_cq_web_page, private_huawei_web_page, } from './about/Web_page'
+import { about } from './about/about'
 
 
 let locationChoosingOptions: sceneMap.LocationChoosingOptions = {
@@ -33,10 +38,11 @@ let locationChoosingOptions: sceneMap.LocationChoosingOptions = {
   showNearbyPoi: true
 };
 
-
-//初始化持久存储
 PersistentStorage.persistProp('token', '');
 PersistentStorage.persistProp('callsign', '');
+PersistentStorage.persistProp('selectedSatellites', []);
+PersistentStorage.persistProp('totalCount', 0);
+PersistentStorage.persistProp('first_lunch', true);
 
 @Entry
 @Component
@@ -45,12 +51,63 @@ struct Index {
   private uiContext: UIContext = this.getUIContext();
   private promptAction: PromptAction = this.uiContext.getPromptAction();
   private context = this.getUIContext().getHostContext() as common.UIAbilityContext;
+
+  dialogControllerProgress: CustomDialogController = new CustomDialogController({
+    builder: LoadingDialog({
+      content: '正在下载中',
+    }),
+  })
   @Provide('index') index: NavPathStack = new NavPathStack()
   @StorageLink('token') token: string = ''
   @StorageLink('callsign') callsign: string = '';
+  @StorageLink('totalCount') totalCount: number = 0
   @State locator: string = ''
   @State locationName: string = ''
 
+  onPageShow(): void {
+    this.checkFirstLaunch()
+
+  }
+  async checkFirstLaunch() {
+    try {
+      if(AppStorage.get('first_lunch') ===true){
+        AppStorage.setOrCreate('first_lunch',false);
+        console.log("首次启动")
+        this.promptAction.showToast({
+          message: '首次启动会下载卫星数据，请稍等',
+          duration: 2000
+        })
+      }
+      await satellite_db_control.db_get_count(this.context)
+        .then((totalCount)=>{
+          AppStorage.setOrCreate('totalCount',totalCount);
+        })
+    } catch (err) {
+    }
+  }
+
+
+  private async fetchSatelliteList(){
+
+    const response = await SatelliteService.getSatelliteList();
+    if (response.success) {
+      this.dialogControllerProgress.open()
+      await satellite_db_control.db_put(this.context,response.data)
+      console.log("DB-页面数据下载初始化")
+      await satellite_db_control.db_get_count(this.context)
+        .then((totalCount)=>{
+          this.totalCount=totalCount
+          setTimeout(() => {
+            this.dialogControllerProgress.close()
+          }, 500);
+        })
+    }
+  }
+
+  private async db_clear_all(){
+    await satellite_db_control.db_clear_all(this.context)
+    this.totalCount = await satellite_db_control.db_get_count(this.context);
+  }
   @Builder
   PageMap(name: string) {
     if (name === "add_log") {
@@ -91,8 +148,8 @@ struct Index {
       MorseTraining()
     } else if (name === "sstv_1") {
       sstv_1()
-    } else if (name === "SatellitePassPage") {
-      SatellitePassPage()
+    } else if (name === "Satellite_index") {
+      Satellite_index()
     } else if (name === "SatelliteRadar") {
       SatelliteRadar()
     }
@@ -127,6 +184,10 @@ struct Index {
               Text(this.callsign)
                 .fontSize(20)
 
+
+              Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
+              Text('存储的卫星数量：' + String(this.totalCount) )
+                .fontSize(20)
               Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
               Row({ space: 35 }) {
                 Image($r('app.media.quick_mark'))
@@ -153,7 +214,7 @@ struct Index {
                         buttons: [
                           {
                             text: '确认',
-                            color: '#000000'
+                            color: $r('sys.color.font_primary')
                           }
                         ]
                       }, (err, data) => {
@@ -184,7 +245,6 @@ struct Index {
           }
           .height("100%")
           .tabBar("首页")
-
 
           TabContent() {
             Column({ space: 5 }) {
@@ -285,24 +345,20 @@ struct Index {
               Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
               //其他行信息
               Column() {
-
                 Row() {
-                  Text('关于我们')
-                    .fontSize(18)
+                  Text('当前版本：1.0.12')
+                    .fontSize(20)
                     .margin(15)
                 }
                 .height(50)
                 .borderRadius(15)
                 .backgroundColor($r('sys.color.comp_background_primary'))
                 .width('100%')
-                .onClick(() => {
-                  this.index.pushPath({ name: 'about' })
-                })
 
                 Divider().strokeWidth(2).color($r('sys.color.background_fourth'))
                 Row() {
-                  Text('应用ICP备案：' + '宁ICP备2024006429号')
-                    .fontSize(18)
+                  Text('ICP备案：' + '宁ICP备2025009768号-2A')
+                    .fontSize(15)
                     .margin(15)
                 }
                 .height(50)
@@ -316,7 +372,7 @@ struct Index {
                 Divider().strokeWidth(2).color($r('sys.color.background_fourth'))
                 Row() {
                   Text('退出登录')
-                    .fontSize(18)
+                    .fontSize(20)
                     .margin(15)
                 }
                 .onClick(() => {
@@ -327,6 +383,41 @@ struct Index {
                   });
                 })
                 .height(50)
+                .borderRadius(15)
+                .backgroundColor($r('sys.color.comp_background_primary'))
+                .width('100%')
+
+                Divider().strokeWidth(2).color($r('sys.color.background_fourth'))
+                Column() {
+                  Button("卫星信息调整")
+                    .onClick(() => {
+                      this.promptAction.showDialog({
+                        title: '卫星信息调整',
+                        buttons: [
+                          {
+                            text: '更新卫星数据',
+                            color: '#000000'
+                          },
+                          {
+                            text: '清除卫星数据',
+                            color: '#000000'
+                          }
+                        ]
+                      }, (err, data) => {
+                        if (err) {
+                          console.error('showDialog err: ' + err);
+                          return;
+                        }
+                        if(data.index===0){
+                          this.fetchSatelliteList()
+                        }else if(data.index===1){
+                          this.db_clear_all()
+                        }
+                        console.info('showDialog success callback, click button: ' + data.index);
+                      })
+
+                    })
+                }
                 .borderRadius(15)
                 .backgroundColor($r('sys.color.comp_background_primary'))
                 .width('100%')

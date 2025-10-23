@@ -1,11 +1,10 @@
-// SatellitePassPage.ets
-import { SatelliteService, SatelliteTLE, AdvancedPassesResponse } from '../http_server/SatelliteService';
+import { AdvancedPassesResponse, SatelliteService, SatelliteTLE } from '../http_server/SatelliteService';
 import { PromptAction } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
-import { UIPagination } from '@hw-agconnect/ui-pagination';
 import { geoLocationManager } from '@kit.LocationKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import abilityAccessCtrl from '@ohos.abilityAccessCtrl';
+import { satellite_db_control } from './Satellite_db';
 
 // 卫星过境信息接口
 interface SatellitePassInfo {
@@ -23,30 +22,37 @@ PersistentStorage.persistProp('lng', 116.4074);
 PersistentStorage.persistProp('alt', 0);
 
 @Component
-export struct SatellitePassPage {
+export struct Satellite_index {
   private context = this.getUIContext().getHostContext() as common.UIAbilityContext;
   private uiContext: UIContext = this.getUIContext();
   private promptAction: PromptAction = this.uiContext.getPromptAction();
   private atManager: abilityAccessCtrl.AtManager = abilityAccessCtrl.createAtManager();
   @Consume('index') index: NavPathStack;
-  // 新增状态：搜索关键词
+
+  // 搜索相关状态
   @State searchKeyword: string = '';
-  // 新增状态：是否正在搜索
   @State isSearching: boolean = false;
-  // 新增状态：搜索结果的卫星列表
   @State searchResults: SatelliteTLE[] = [];
   @State displayList: SatelliteTLE[] = [];
-  @State search: string = ''
-  @State start_page: number = 1
-  // 卫星列表（从后端获取）
-  @StorageProp('satelliteList') satelliteList: SatelliteTLE[] = [];
-  @State satelliteList_copy: SatelliteTLE[] = [];
+
+  // 分页相关状态
+  @State currentPage: number = 1;
+  @State pageSize: number = 20; // 每页显示数量
+  @StorageLink('totalCount') totalCount: number = 0
+
+  // 卫星列表（从数据库获取）
+  @State satelliteList: SatelliteTLE[] = [];
+
   // 已选择的卫星
-  @State selectedSatellites: SatelliteTLE[] = [];
+  // @State selectedSatellites: SatelliteTLE[] = [];
+  @StorageLink('selectedSatellites') selectedSatellites: SatelliteTLE[] = []
   // 查询结果（过境信息列表）
   @State passResults: SatellitePassInfo[] = [];
+
   // 加载状态
   @State isLoading: boolean = false;
+  @State isDialogLoading: boolean = false;
+
   // 用户位置（默认为北京）
   @StorageLink('NORAD_ID') NORAD_ID: number = 0
   @StorageLink('lat') lat: number = 0
@@ -54,10 +60,11 @@ export struct SatellitePassPage {
   @StorageLink('alt') alt: number = 0
   @StorageLink('start_time') start_time: string = ''
   @StorageLink('duration') duration: number = 0
+
   // 天数限制
-  @State daysLimit: number = 2;
+  @State daysLimit: number = 1;
   // 最低仰角限制
-  @State minElevation: number = 16;
+  @State minElevation: number = 18;
   // 是否显示卫星选择弹窗
   @State showSatelliteDialog: boolean = false;
   // 最近一次过境距离现在的时间（格式化）
@@ -67,16 +74,61 @@ export struct SatellitePassPage {
 
   // 组件生命周期
   aboutToAppear() {
-    this.satelliteList_cp(100)
-    this.requestSensorPermissions()
-    // 获取卫星列表
-    // this.fetchSatelliteList();
+    this.requestSensorPermissions();
+    this.loadSatelliteCount();
   }
 
   aboutToDisappear() {
     // 清除计时器
     if (this.countdownTimer) {
       clearInterval(this.countdownTimer);
+    }
+  }
+
+  /**
+   * 加载卫星总数
+   */
+  private async loadSatelliteCount(): Promise<void> {
+    try {
+      this.totalCount = await satellite_db_control.db_get_count(this.context);
+      console.info(`卫星总数: ${this.totalCount}`);
+    } catch (error) {
+      console.error('获取卫星总数失败:', error);
+    }
+  }
+
+  /**
+   * 从数据库加载卫星列表（分页）
+   */
+  private async loadSatellitesFromDB(page: number = 1): Promise<void> {
+    this.isDialogLoading = true;
+    try {
+      this.satelliteList = await satellite_db_control.db_get(this.context, page, this.pageSize);
+      this.displayList = this.satelliteList;
+      this.currentPage = page;
+      console.info(`加载第 ${page} 页数据，共 ${this.satelliteList.length} 条`);
+    } catch (error) {
+      console.error('从数据库加载卫星列表失败:', error);
+      this.promptAction.showToast({ message: '加载卫星列表失败' });
+    } finally {
+      this.isDialogLoading = false;
+    }
+  }
+
+  /**
+   * 从数据库搜索卫星
+   */
+  private async searchSatellitesFromDB(keyword: string): Promise<void> {
+    this.isDialogLoading = true;
+    try {
+      this.searchResults = await satellite_db_control.db_search(this.context, keyword, 1, this.pageSize);
+      this.displayList = this.searchResults;
+      console.info(`搜索 "${keyword}" 找到 ${this.searchResults.length} 个结果`);
+    } catch (error) {
+      console.error('搜索卫星失败:', error);
+      this.promptAction.showToast({ message: '搜索失败' });
+    } finally {
+      this.isDialogLoading = false;
     }
   }
 
@@ -103,7 +155,6 @@ export struct SatellitePassPage {
 
   // 获取用户位置
   private async getUserLocation(): Promise<void> {
-
     let locationChange = (err: BusinessError, location: geoLocationManager.Location) => {
       if (err) {
         console.error('locationChange: err=' + JSON.stringify(err));
@@ -123,19 +174,6 @@ export struct SatellitePassPage {
     }
   }
 
-  private async satelliteList_cp(true_total: number): Promise<void> {
-    try {
-      this.satelliteList_copy = []
-      this.satelliteList_copy = this.satelliteList.slice(true_total - 100, true_total);
-      // for(let i=true_total-100;i<true_total;i+=1){
-      //   this.satelliteList_copy.push(this.satelliteList[i])
-      // }
-      this.updateDisplayList();
-    } catch (error) {
-      console.error('更新卫星列表错误:', error);
-    }
-  }
-
   // 添加卫星到选择列表
   private addSatellite(satellite: SatelliteTLE): void {
     // 检查是否已添加
@@ -146,7 +184,6 @@ export struct SatellitePassPage {
     } else {
       this.promptAction.showToast({ message: `${satellite.name} 已添加` });
     }
-    // 不再自动关闭弹窗，需要手动点击关闭按钮
   }
 
   // 从选择列表移除卫星
@@ -293,38 +330,24 @@ export struct SatellitePassPage {
       .padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
   }
 
-  // 新增方法：更新显示列表
-  private updateDisplayList(): void {
-    if (this.isSearching) {
-      this.displayList = this.searchResults;
-    } else {
-      this.displayList = this.satelliteList_copy;
-    }
-  }
-
-  // 新增方法：执行搜索
-  private performSearch(keyword: string): void {
+  // 执行搜索
+  private async performSearch(keyword: string): Promise<void> {
     this.searchKeyword = keyword;
     this.isSearching = keyword.length > 0;
 
     if (this.isSearching) {
-      // 执行模糊搜索
-      const lowerKeyword = keyword.toLowerCase();
-      this.searchResults = this.satelliteList.filter(satellite =>
-      satellite.name.toLowerCase().includes(lowerKeyword) ||
-      satellite.norad_id.toString().includes(lowerKeyword)
-      );
+      await this.searchSatellitesFromDB(keyword);
+    } else {
+      // 清空搜索，回到当前页
+      await this.loadSatellitesFromDB(this.currentPage);
     }
-
-    this.updateDisplayList();
   }
 
-  // 新增方法：清空搜索
-  private clearSearch(): void {
+  // 清空搜索
+  private async clearSearch(): Promise<void> {
     this.searchKeyword = '';
     this.isSearching = false;
-    this.searchResults = [];
-    this.updateDisplayList();
+    await this.loadSatellitesFromDB(this.currentPage);
   }
 
   build() {
@@ -424,9 +447,9 @@ export struct SatellitePassPage {
             .backgroundColor($r('sys.color.brand'))
             .fontColor($r('sys.color.comp_common_contrary'))
             .margin({ right: 8 })
-            .onClick(() => {
-              this.satelliteList_cp(100)
+            .onClick(async () => {
               this.showSatelliteDialog = true;
+              await this.loadSatellitesFromDB(1);
             })
 
           // 查询按钮
@@ -594,7 +617,7 @@ export struct SatellitePassPage {
                 .fontColor($r('sys.color.font_primary'))
                 .border({ width: 1, color: $r('sys.color.comp_divider'), radius: 4 })
                 .onChange((value: string) => {
-                  this.search = value
+                  this.performSearch(value);
                 })
 
               // 清空搜索按钮
@@ -607,16 +630,6 @@ export struct SatellitePassPage {
                 .height(36)
                 .onClick(() => {
                   this.clearSearch();
-                })
-              } else {
-                Text() {
-                  SymbolSpan($r('sys.symbol.magnifyingglass'))
-                    .fontSize(20)
-                }
-                .width(36)
-                .height(36)
-                .onClick(() => {
-                  this.performSearch(this.search);
                 })
               }
             }
@@ -639,8 +652,12 @@ export struct SatellitePassPage {
 
             Scroll() {
               Column() {
-                // 使用响应式状态变量 displayList 而不是 let 变量
-                if (this.displayList.length === 0) {
+                if (this.isDialogLoading) {
+                  Text('正在加载...')
+                    .fontSize(14)
+                    .fontColor($r('sys.color.font_tertiary'))
+                    .margin(10)
+                } else if (this.displayList.length === 0) {
                   Text(this.isSearching ? '请尝试其他搜索词' : '暂无卫星数据')
                     .fontSize(14)
                     .fontColor($r('sys.color.font_tertiary'))
@@ -652,9 +669,9 @@ export struct SatellitePassPage {
                       .height(44)
                       .margin(6)
                       .backgroundColor(this.selectedSatellites.some(s => s.norad_id === satellite.norad_id) ?
-                      $r('sys.color.brand') : $r('sys.color.background_secondary'))
+                        $r('sys.color.brand') : $r('sys.color.background_secondary'))
                       .fontColor(this.selectedSatellites.some(s => s.norad_id === satellite.norad_id) ?
-                      $r('sys.color.comp_common_contrary') : $r('sys.color.font_primary'))
+                        $r('sys.color.comp_common_contrary') : $r('sys.color.font_primary'))
                       .onClick(() => this.addSatellite(satellite))
                   })
                 }
@@ -663,18 +680,32 @@ export struct SatellitePassPage {
             .height('60%')
             .width('100%')
 
-            // 只有在非搜索模式下显示分页
+            // 分页控件（只有在非搜索模式下显示）
             if (!this.isSearching) {
-              UIPagination({
-                currentPage: this.start_page,
-                total: this.satelliteList.length,
-                pageSize: 100,
-                change: (currentV: number) => {
-                  const true_total: number = currentV * 100
-                  this.satelliteList_cp(true_total)
-                  console.log("页面切换")
-                }
-              })
+              Row() {
+                Button('上一页')
+                  .enabled(this.currentPage > 1)
+                  .onClick(async () => {
+                    if (this.currentPage > 1) {
+                      await this.loadSatellitesFromDB(this.currentPage - 1);
+                    }
+                  })
+
+                Text(`第 ${this.currentPage} 页 / 共 ${Math.ceil(this.totalCount / this.pageSize)} 页`)
+                  .fontSize(14)
+                  .margin({ left: 16, right: 16 })
+
+                Button('下一页')
+                  .enabled(this.currentPage < Math.ceil(this.totalCount / this.pageSize))
+                  .onClick(async () => {
+                    if (this.currentPage < Math.ceil(this.totalCount / this.pageSize)) {
+                      await this.loadSatellitesFromDB(this.currentPage + 1);
+                    }
+                  })
+              }
+              .margin(10)
+              .width('100%')
+              .justifyContent(FlexAlign.Center)
             }
 
             Button('关闭')

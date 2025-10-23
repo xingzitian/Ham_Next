@@ -6,7 +6,6 @@
     "mainElement": "EntryAbility",
     "deviceTypes": [
       "phone",
-      "tablet",
     ],
     "deliveryWithInstall": true,
     "installationFree": false,
@@ -89,7 +88,7 @@
     "metadata": [ // 配置信息如下
       {
         "name": "client_id",
-        "value": "1474807846280375744"
+        "value": "1793122876577048448"
       }
     ]
   }

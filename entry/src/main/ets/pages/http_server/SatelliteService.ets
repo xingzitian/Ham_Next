@@ -5,7 +5,7 @@ import { promptAction } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 // 卫星服务基础URL
-let satelliteUrl: string = 'http://cq.zhangyulin.top:12303/api/'; // 请替换为实际服务器地址
+let satelliteUrl: string = 'http://cq.huwenxin.top:12303/api/'; // 请替换为实际服务器地址
 
 // 1. 卫星TLE数据接口
 export interface SatelliteTLE {

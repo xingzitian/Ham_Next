@@ -644,7 +644,6 @@ export struct MorseCodeConverter {
               .width('90%')
               .textAlign(TextAlign.Center)
               .padding(15)
-              .backgroundColor(Color.White)
               .borderRadius(8)
               .border({ width: 1, color: Color.Gray })
           }
