@@ -3,9 +3,9 @@ import { sensor } from '@kit.SensorServiceKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import abilityAccessCtrl from '@ohos.abilityAccessCtrl';
 import common from '@ohos.app.ability.common';
-import { SatelliteService, trans, transmitters_info } from '../http_server/SatelliteService';
+import { SatelliteService, trans, Transmitter } from '../http_server/SatelliteService';
 import { PromptAction } from '@kit.ArkUI';
-
+import { satellite_db_control } from './Satellite_db';
 // 定义轨迹点接口
 interface TrajectoryPoint {
   x: number;
@@ -21,14 +21,6 @@ interface Coordinate {
   y: number;
 }
 
-interface TransmitterWithDisplay extends transmitters_info {
-  displayDownlink: string;
-  displayUplink: string;
-}
-
-interface TransWithDisplay extends trans {
-  transmitters: TransmitterWithDisplay[];
-}
 
 @Component
 export struct SatelliteRadar {
@@ -64,33 +56,8 @@ export struct SatelliteRadar {
   @StorageProp('duration') duration: number = 0;
   @StorageProp('start_time') start_time: string = '';
   @State isSatelliteVisible: boolean = false
-  @State rad_trans: trans = {
-    success: false,
-    satellite: {
-      norad_id: -1,
-      name: '',
-      status: '',
-    },
-    transmitters: [{
-      description: '',
-      downlink_frequency: -1,
-      downlink_mode: '',
-      uplink_frequency: -1,
-      uplink_mode: '',
-      invert: false
-    }],
-    count: -1,
-  }
-  @State new_rad_trans: TransWithDisplay = {
-    success: false,
-    satellite: {
-      norad_id: -1,
-      name: '',
-      status: ''
-    },
-    transmitters: [],
-    count: -1
-  };
+  @State rad_trans: Transmitter[] = []
+
   // 导航控制器
   @Consume('index') index: NavPathStack;
   // 定时器用于实时获取卫星位置
@@ -267,31 +234,14 @@ export struct SatelliteRadar {
 
   private async get_transmitters(): Promise<void> {
     try {
-      this.promptAction.showToast({ message: '正在获取卫星轨迹数据...' });
+      this.promptAction.showToast({ message: '正在获取卫星收发器...' });
 
-      // 调用API获取轨迹数据
-      const response = await SatelliteService.get_transmitters(
-        this.noradId
-      );
 
-      console.info('轨迹API响应:', JSON.stringify(response));
+      this.rad_trans = await satellite_db_control.db_get_transmitters_by_norad(this.getUIContext().getHostContext() as common.UIAbilityContext,this.noradId)
+      this.promptAction.showToast({ message: '卫星收发器获取成功' });
 
-      if (response && response.success) {
-        // 处理轨迹数据
-        this.rad_trans = response
-        this.new_rad_trans = this.processTransmittersWithDoppler(
-          this.rad_trans,
-          0,
-          false
-        );
-        this.promptAction.showToast({ message: '卫星收发器获取成功' });
-      } else {
-        console.error('卫星收发器失败，响应:', response);
-        this.promptAction.showToast({ message: '卫星收发器数据失败，请重试' });
-      }
     } catch (error) {
       console.error('卫星收发器失败:', error);
-      this.promptAction.showToast({ message: '卫星收发器失败，请检查网络连接' });
     }
   }
 
@@ -318,12 +268,6 @@ export struct SatelliteRadar {
         // 检查卫星是否可见
         this.isSatelliteVisible = response.data.observer.is_visible;
 
-        // 处理收发器数据并赋值给 new_rad_trans
-        this.new_rad_trans = this.processTransmittersWithDoppler(
-          this.rad_trans,
-          rangeRate,
-          true
-        );
         console.log(String(this.isSatelliteVisible));
         console.log(String(rangeRate));
         this.drawRadar();
@@ -707,73 +651,6 @@ export struct SatelliteRadar {
     this.drawRadar();
   }
 
-  // 处理收发器数据的函数（修复版）
-  private processTransmittersWithDoppler(
-    originalData: trans,
-    rangeRate: number, // 使用 range_rate (公里/秒)
-    isSatelliteVisible: boolean
-  ): TransWithDisplay {
-    // 创建新的数据对象，手动复制属性
-    const newData: TransWithDisplay = {
-      success: originalData.success,
-      satellite: {
-        norad_id: originalData.satellite.norad_id,
-        name: originalData.satellite.name,
-        status: originalData.satellite.status
-      },
-      transmitters: [],
-      count: originalData.count
-    };
-
-    // 处理每个收发器
-    if (originalData.transmitters) {
-      newData.transmitters = originalData.transmitters.map((transmitter: transmitters_info): TransmitterWithDisplay => {
-        let displayDownlink: string;
-        let displayUplink: string;
-
-
-        // 卫星可见时，应用多普勒频移
-        // rangeRate 单位是公里/秒，需要转换为米/秒
-        const relativeSpeed = rangeRate * 1000; // 转换为米/秒
-
-        // 计算多普勒频移
-        const downlinkDoppler = this.calculateDopplerShift(transmitter.downlink_frequency, relativeSpeed);
-        const uplinkDoppler = this.calculateDopplerShift(transmitter.uplink_frequency, relativeSpeed);
-
-        // 应用频移（注意符号：远离时频率降低，接近时频率增加）
-        const downlinkWithDoppler = transmitter.downlink_frequency + downlinkDoppler;
-        const uplinkWithDoppler = transmitter.uplink_frequency + uplinkDoppler;
-
-        displayDownlink = this.formatFrequency(downlinkWithDoppler);
-        displayUplink = this.formatFrequency(uplinkWithDoppler);
-
-        // 调试信息
-        // console.info(`多普勒频移计算:
-        // 原始下行频率: ${transmitter.downlink_frequency} Hz
-        // 原始上行频率: ${transmitter.uplink_frequency} Hz
-        // 相对速度: ${relativeSpeed} m/s
-        // 下行频移: ${downlinkDoppler} Hz
-        // 上行频移: ${uplinkDoppler} Hz
-        // 调整后下行: ${downlinkWithDoppler} Hz
-        // 调整后上行: ${uplinkWithDoppler} Hz`);
-
-
-        // 手动复制所有属性并添加新属性
-        return {
-          description: transmitter.description,
-          downlink_frequency: transmitter.downlink_frequency,
-          downlink_mode: transmitter.downlink_mode,
-          uplink_frequency: transmitter.uplink_frequency,
-          uplink_mode: transmitter.uplink_mode,
-          invert: transmitter.invert,
-          displayDownlink,
-          displayUplink
-        };
-      });
-    }
-
-    return newData;
-  }
 
   // 辅助函数
   private calculateDopplerShift(baseFrequency: number, relativeSpeed: number): number {
@@ -868,7 +745,7 @@ export struct SatelliteRadar {
         // 下半部分留空，用于放置卫星收发器
         Column() {
           List({ space: 5 }) {
-            ForEach(this.new_rad_trans.transmitters, (item: TransmitterWithDisplay) => {
+            ForEach(this.rad_trans, (item: Transmitter) => {
               ListItem() {
                 Column() {
                   Row() {
@@ -893,14 +770,14 @@ export struct SatelliteRadar {
                       Text('暂无')
                         .width('40%')
                     } else {
-                      Text(item.displayDownlink)
+                      Text(item.downlink_mode)
                         .width('40%')
                     }
                     if (String(item.uplink_frequency) === 'null') {
                       Text('暂无')
                         .width('40%')
                     } else {
-                      Text(item.displayUplink)
+                      Text(item.uplink_mode)
                         .width('40%')
                     }
                   }

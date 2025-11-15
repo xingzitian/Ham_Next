@@ -41,7 +41,8 @@ let locationChoosingOptions: sceneMap.LocationChoosingOptions = {
 PersistentStorage.persistProp('token', '');
 PersistentStorage.persistProp('callsign', '');
 PersistentStorage.persistProp('selectedSatellites', []);
-PersistentStorage.persistProp('totalCount', 0);
+PersistentStorage.persistProp('total_satellite', 0);
+PersistentStorage.persistProp('total_trans', 0);
 PersistentStorage.persistProp('first_lunch', true);
 
 @Entry
@@ -60,13 +61,13 @@ struct Index {
   @Provide('index') index: NavPathStack = new NavPathStack()
   @StorageLink('token') token: string = ''
   @StorageLink('callsign') callsign: string = '';
-  @StorageLink('totalCount') totalCount: number = 0
+  @StorageLink('total_satellite') total_satellite: number = 0
+  @StorageLink('total_trans') total_trans: number = 0
   @State locator: string = ''
   @State locationName: string = ''
 
   onPageShow(): void {
     this.checkFirstLaunch()
-
   }
   async checkFirstLaunch() {
     try {
@@ -79,34 +80,70 @@ struct Index {
         })
       }
       await satellite_db_control.db_get_count(this.context)
-        .then((totalCount)=>{
-          AppStorage.setOrCreate('totalCount',totalCount);
+        .then((total_satellite)=>{
+          AppStorage.setOrCreate('total_satellite',total_satellite);
+        })
+      await satellite_db_control.db_get_transmitters_count(this.context)
+        .then((total_trans)=>{
+          AppStorage.setOrCreate('total_trans',total_trans);
         })
     } catch (err) {
     }
   }
 
+  private async fetchSatelliteList() {
+    try {
+      // 1. 打开进度弹窗
+      this.dialogControllerProgress.open();
 
-  private async fetchSatelliteList(){
+      // 2. 并行下载数据（同时发起两个请求）
+      console.log("开始下载卫星和收发器数据...");
+      const results = await Promise.all([
+        SatelliteService.get_transmitters(),
+        SatelliteService.getSatelliteList()
+      ]);
 
-    const response = await SatelliteService.getSatelliteList();
-    if (response.success) {
-      this.dialogControllerProgress.open()
-      await satellite_db_control.db_put(this.context,response.data)
-      console.log("DB-页面数据下载初始化")
-      await satellite_db_control.db_get_count(this.context)
-        .then((totalCount)=>{
-          this.totalCount=totalCount
-          setTimeout(() => {
-            this.dialogControllerProgress.close()
-          }, 500);
-        })
+      // 3. 分别获取结果
+      const res_trans = results[0];
+      const res_sat = results[1];
+
+      // 3. 先存储卫星数据
+      console.log("存储卫星数据...");
+      await satellite_db_control.db_put(this.context, res_sat.data);
+
+      // 4. 获取并更新卫星数量
+      const total_satellite = await satellite_db_control.db_get_count(this.context);
+      AppStorage.setOrCreate('total_satellite', total_satellite);
+      console.log("卫星数据下载完成，总数:", total_satellite);
+
+      // 5. 存储收发器数据
+      console.log("存储收发器数据...");
+      await satellite_db_control.db_put_transmitters(this.context, res_trans.data);
+
+      // 6. 获取并更新收发器数量
+      const total_trans = await satellite_db_control.db_get_transmitters_count(this.context);
+      AppStorage.setOrCreate('total_trans', total_trans);
+      console.log("收发器数据下载完成，总数:", total_trans);
+
+      // 7. 所有操作完成后关闭弹窗
+      this.dialogControllerProgress.close();
+
+      // 8. 显示成功提示
+      this.promptAction.showToast({message:`数据更新成功！卫星: ${total_satellite} 颗，收发器: ${total_trans} 个`})
+
+    } catch (error) {
+      // 9. 统一错误处理
+      console.error("数据下载失败:", error);
+      this.dialogControllerProgress.close(); // 确保弹窗关闭
+      this.promptAction.showToast({message:"数据下载失败，请检查网络连接"})
+
     }
   }
 
   private async db_clear_all(){
     await satellite_db_control.db_clear_all(this.context)
-    this.totalCount = await satellite_db_control.db_get_count(this.context);
+    this.total_satellite = await satellite_db_control.db_get_count(this.context);
+    this.total_trans = await satellite_db_control.db_get_transmitters_count(this.context);
   }
   @Builder
   PageMap(name: string) {
@@ -178,17 +215,6 @@ struct Index {
                 .format("yyyy年M月d日HH:mm:ss")
 
               Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
-
-              Text('当前登录用户呼号：')
-                .fontSize(20)
-              Text(this.callsign)
-                .fontSize(20)
-
-
-              Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
-              Text('存储的卫星数量：' + String(this.totalCount) )
-                .fontSize(20)
-              Divider().strokeWidth(3).color($r('sys.color.background_fourth'))
               Row({ space: 35 }) {
                 Image($r('app.media.quick_mark'))
                   .width(160)
@@ -237,7 +263,7 @@ struct Index {
                 Image($r('app.media.sate'))
                   .width(160)
                   .onClick(() => {
-                    this.index.pushPath({ name: 'SatellitePassPage' })
+                    this.index.pushPath({ name: 'Satellite_index' })
                   })
               }
             }
@@ -346,7 +372,7 @@ struct Index {
               //其他行信息
               Column() {
                 Row() {
-                  Text('当前版本：1.0.12')
+                  Text('当前版本：1.0.15')
                     .fontSize(20)
                     .margin(15)
                 }
@@ -389,17 +415,26 @@ struct Index {
 
                 Divider().strokeWidth(2).color($r('sys.color.background_fourth'))
                 Column() {
-                  Button("卫星信息调整")
+                  Text("卫星数据管理")
+                    .fontSize(22)
+                  Row(){
+                    Text('存储的卫星数量：' + String(this.total_satellite)+" " )
+                      .fontSize(16)
+                    Text('存储的收发器数量：' + String(this.total_trans) )
+                      .fontSize(16)
+                  }
+                  Button("重新拉取数据")
                     .onClick(() => {
                       this.promptAction.showDialog({
-                        title: '卫星信息调整',
+                        title: '重新拉取数据',
+                        message:"确认？这将会清空本地已经下载的数据并重新下载，请确保链接到网络",
                         buttons: [
                           {
-                            text: '更新卫星数据',
+                            text: '确认',
                             color: '#000000'
                           },
                           {
-                            text: '清除卫星数据',
+                            text: '取消',
                             color: '#000000'
                           }
                         ]
@@ -409,9 +444,8 @@ struct Index {
                           return;
                         }
                         if(data.index===0){
-                          this.fetchSatelliteList()
-                        }else if(data.index===1){
                           this.db_clear_all()
+                          this.fetchSatelliteList()
                         }
                         console.info('showDialog success callback, click button: ' + data.index);
                       })

@@ -38,7 +38,7 @@ export struct Satellite_index {
   // 分页相关状态
   @State currentPage: number = 1;
   @State pageSize: number = 20; // 每页显示数量
-  @StorageLink('totalCount') totalCount: number = 0
+  @StorageLink('total_satellite') total_satellite: number = 0
 
   // 卫星列表（从数据库获取）
   @State satelliteList: SatelliteTLE[] = [];
@@ -47,7 +47,7 @@ export struct Satellite_index {
   // @State selectedSatellites: SatelliteTLE[] = [];
   @StorageLink('selectedSatellites') selectedSatellites: SatelliteTLE[] = []
   // 查询结果（过境信息列表）
-  @State passResults: SatellitePassInfo[] = [];
+  @StorageLink('passResults') passResults: SatellitePassInfo[] = [];
 
   // 加载状态
   @State isLoading: boolean = false;
@@ -90,8 +90,8 @@ export struct Satellite_index {
    */
   private async loadSatelliteCount(): Promise<void> {
     try {
-      this.totalCount = await satellite_db_control.db_get_count(this.context);
-      console.info(`卫星总数: ${this.totalCount}`);
+      this.total_satellite = await satellite_db_control.db_get_count(this.context);
+      console.info(`卫星总数: ${this.total_satellite}`);
     } catch (error) {
       console.error('获取卫星总数失败:', error);
     }
@@ -691,14 +691,14 @@ export struct Satellite_index {
                     }
                   })
 
-                Text(`第 ${this.currentPage} 页 / 共 ${Math.ceil(this.totalCount / this.pageSize)} 页`)
+                Text(`第 ${this.currentPage} 页 / 共 ${Math.ceil(this.total_satellite / this.pageSize)} 页`)
                   .fontSize(14)
                   .margin({ left: 16, right: 16 })
 
                 Button('下一页')
-                  .enabled(this.currentPage < Math.ceil(this.totalCount / this.pageSize))
+                  .enabled(this.currentPage < Math.ceil(this.total_satellite / this.pageSize))
                   .onClick(async () => {
-                    if (this.currentPage < Math.ceil(this.totalCount / this.pageSize)) {
+                    if (this.currentPage < Math.ceil(this.total_satellite / this.pageSize)) {
                       await this.loadSatellitesFromDB(this.currentPage + 1);
                     }
                   })

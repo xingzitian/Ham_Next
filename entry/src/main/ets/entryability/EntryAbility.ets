@@ -40,7 +40,6 @@ export default class EntryAbility extends UIAbility {
             console.log('数据库已有数据')
           }
         })
-
       hilog.info(DOMAIN, 'testTag', 'Database initialized and data downloaded successfully');
     } catch (error) {
       hilog.error(DOMAIN, 'testTag', 'Failed to initialize database or download data: %{public}s', JSON.stringify(error));
@@ -64,18 +63,31 @@ export default class EntryAbility extends UIAbility {
   }
 
   private async fetchSatelliteList(){
-    const response = await SatelliteService.getSatelliteList();
-    if (response.success) {
-      await satellite_db_control.db_put(this.context,response.data)
-        .then(()=>{
-          console.log("DB-页面数据下载初始化")
-          return satellite_db_control.db_get_count(this.context)
-        })
-        .then((totalCount)=>{
-          console.log("DB-页面数据下载完成，更新UI")
-          AppStorage.setOrCreate('totalCount',totalCount);
-        })
-
+    try{
+      const res_trans=await SatelliteService.get_transmitters();
+      const res_sat = await SatelliteService.getSatelliteList();
+      if (res_sat.success) {
+        await satellite_db_control.db_put(this.context,res_sat.data)
+          .then(()=>{
+            console.log("DB-卫星数据下载初始化")
+            return satellite_db_control.db_get_count(this.context)
+          })
+          .then((total_satellite)=>{
+            AppStorage.setOrCreate('total_satellite',total_satellite);
+          })
+      }
+      if (res_trans.success) {
+        await satellite_db_control.db_put_transmitters(this.context,res_trans.data)
+          .then(()=>{
+            console.log("DB-收发器数据下载初始化")
+            return satellite_db_control.db_get_transmitters_count(this.context)
+          })
+          .then((total_trans)=>{
+            AppStorage.setOrCreate('total_trans',total_trans);
+          })
+      }
+    }catch (error){
+      console.log(error)
     }
   }
 }

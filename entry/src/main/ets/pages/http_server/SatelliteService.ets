@@ -11,9 +11,8 @@ let satelliteUrl: string = 'http://cq.huwenxin.top:12303/api/'; // 请替换为�
 export interface SatelliteTLE {
   norad_id: number;
   name: string;
-  line1: string;
-  line2: string;
-  updated_at: string;
+  tle1: string;
+  tle2: string;
 }
 
 // 2. 卫星列表响应接口
@@ -128,24 +127,18 @@ export interface TrajectoryResponse {
 //16. 卫星收发器接口
 export interface trans {
   success: boolean;
-  satellite: satellite_info;
-  transmitters: transmitters_info[];
-  count: number;
+  total: number;
+  data: Transmitter[];
 }
 
-export interface satellite_info {
+export interface Transmitter {
   norad_id: number;
-  name: string;
-  status: string;
-}
-
-export interface transmitters_info {
-  description: string,
-  downlink_frequency: number,
-  downlink_mode: string,
-  uplink_frequency: number,
-  uplink_mode: string,
-  invert: boolean
+  description: string;
+  downlink_frequency: number;
+  downlink_mode: string;
+  uplink_frequency: number;
+  uplink_mode: string;
+  invert: boolean;
 }
 
 
@@ -184,41 +177,6 @@ export class SatelliteService {
       );
     });
   }
-
-  // // 获取卫星详细信息
-  // static async getSatelliteDetail(request: OrbitCalculateRequest):Promise<SatelliteTLE> {
-  //   const mode_url = 'orbit/calculate';
-  //   const HttpRequestOptions: http.HttpRequestOptions = {
-  //     method: http.RequestMethod.POST,
-  //     header: { 'Content-Type': 'application/json' },
-  //     extraData: JSON.stringify(request)
-  //   };
-  //
-  //   return new Promise((resolve, reject) => {
-  //     let httpRequest = http.createHttp();
-  //     httpRequest.request(
-  //       satelliteUrl + mode_url,
-  //       HttpRequestOptions,
-  //       (err: BusinessError, data: http.HttpResponse) => {
-  //         if (!err) {
-  //           if (data.responseCode === 200) {
-  //             const response: OrbitCalculateResponse = JSON.parse(data.result.toString());
-  //             hilog.info(0x0001, "SatelliteService", "计算卫星轨道成功");
-  //             resolve(response);
-  //           } else {
-  //             hilog.error(0x0001, "SatelliteService", "计算卫星轨道失败: %{public}i", data.responseCode);
-  //             reject(data.responseCode);
-  //           }
-  //           httpRequest.destroy();
-  //         } else {
-  //           hilog.error(0x0001, "SatelliteService", "网络错误: %{public}s", JSON.stringify(err));
-  //           httpRequest.destroy();
-  //           reject(err);
-  //         }
-  //       }
-  //     );
-  //   });
-  // }
 
   // 计算卫星当前位置
   static async calculateOrbit(
@@ -348,11 +306,9 @@ export class SatelliteService {
     });
   }
 
-  // 获取卫星过境轨迹（极简模式）
-  static async get_transmitters(
-    noradId: number,
-  ): Promise<trans> {
-    const mode_url = `satellites/${noradId}/transmitters`;
+  // 获取卫星收发器
+  static async get_transmitters(): Promise<trans> {
+    const mode_url = `transmitters`;
     const HttpRequestOptions: http.HttpRequestOptions = {
       method: http.RequestMethod.GET,
       header: { 'Content-Type': 'application/json' }
