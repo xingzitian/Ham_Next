@@ -46,11 +46,19 @@
 - 开发语言：鸿蒙原生开发语言
 - 协议许可：**GPL-3.0 通用公共许可证**
 
-## 安装使用
+#### 食用方法
 1. 下载项目源码至本地
 2. 使用DevEco Studio打开项目，选择鸿蒙6.0.0(20) API编译
 3. 连接鸿蒙6.0+设备，直接编译运行或生成hap包安装
 4. 安装后打开应用，可直接使用基础功能，卫星数据可手动拉取更新
+
+您可以使用[Auto-installer](https://github.com/likuai2010/auto-installer/)或[DevEcho Testing](https://developer.huawei.com/consumer/cn/deveco-testing/)进行安装。
+
+> [!IMPORTANT]
+> 华为的签名服务器屏蔽了非中国大陆的IP地址，若要在非中国大陆的国家/地区为HarmonyOS NEXT侧载软件，请使用代理等方式使用中国大陆的IP地址。
+
+> [!NOTE]
+> 在HarmonyOS NEXT使用自签名的方式进行侧载的App默认只有14天的有效期，进行[开发者实名认证](https://developer.huawei.com/consumer/cn/verified/enrollment)后即可将有效期提升至180天。
 
 ## 效果演示
 项目开发与功能演示视频已发布，可点击链接查看：
