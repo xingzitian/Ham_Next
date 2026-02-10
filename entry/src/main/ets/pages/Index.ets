@@ -136,7 +136,6 @@ struct Index {
       console.error("数据下载失败:", error);
       this.dialogControllerProgress.close(); // 确保弹窗关闭
       this.promptAction.showToast({message:"数据下载失败，请检查网络连接"})
-
     }
   }
 

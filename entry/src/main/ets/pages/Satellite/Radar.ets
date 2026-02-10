@@ -22,8 +22,10 @@ interface Coordinate {
 }
 
 
+
 @Component
 export struct SatelliteRadar {
+
   // 使用RenderingContextSettings创建Canvas上下文
   private settings: RenderingContextSettings = new RenderingContextSettings(true);
   private context: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.settings);
@@ -43,7 +45,7 @@ export struct SatelliteRadar {
   @State private currentAzimuth: number = 0; // 当前卫星方位角
   @State private currentRange: number = 0; // 当前卫星距离
   @State private pageTitle: string = '卫星轨迹雷达图'; // 动态标题
-  @State private showTrajectoryPoints: boolean = true; // 是否显示轨迹点
+  @State showTrajectoryPoints: boolean = true; // 是否显示轨迹点
   // 权限管理
   private atManager: abilityAccessCtrl.AtManager = abilityAccessCtrl.createAtManager();
   // 卫星信息 - 通过StorageProp同步
@@ -64,6 +66,14 @@ export struct SatelliteRadar {
   private positionTimer: number = 0;
   private countdownTimer: number = 0;
 
+  toolTmp: NavigationMenuItem  = {
+    'value': 'func',
+    'icon': 'resources/base/media/eye_slash.svg',
+    'action': () => {
+      console.log("隐藏轨迹")
+      this.toggleTrajectoryPoints()
+    }
+  };
   // 组件生命周期
   aboutToAppear() {
     console.info(`接收到的卫星数据: NORAD ID=${this.noradId}, 名称=${this.satelliteName}`);
@@ -72,7 +82,7 @@ export struct SatelliteRadar {
     // 申请传感器权限
     this.requestSensorPermissions();
 
-    // 设置定时获取卫星位置（每10秒一次）
+    // 设置定时获取卫星位置（每5秒一次）
     this.positionTimer = setInterval(() => {
       this.fetchSatellitePosition();
     }, 5000);
@@ -764,20 +774,20 @@ export struct SatelliteRadar {
                   }
                   .width('100%')
                   .justifyContent(FlexAlign.SpaceAround)
-
+                  //频率行
                   Row() {
-                    if (String(item.downlink_frequency) === 'null') {
+                    if (String(item.downlink_frequency) === 'null'||String(item.downlink_frequency) === '0') {
                       Text('暂无')
                         .width('40%')
                     } else {
-                      Text(item.downlink_mode)
+                      Text(String(item.downlink_frequency))
                         .width('40%')
                     }
-                    if (String(item.uplink_frequency) === 'null') {
+                    if (String(item.uplink_frequency) === 'null'||String(item.uplink_frequency) === '0') {
                       Text('暂无')
                         .width('40%')
                     } else {
-                      Text(item.uplink_mode)
+                      Text(String(item.uplink_frequency))
                         .width('40%')
                     }
                   }
@@ -804,24 +814,15 @@ export struct SatelliteRadar {
           }
         }
         .width('90%')
-        .height('30%')
+        .height('35%')
         .justifyContent(FlexAlign.Center)
-
-        Button(this.showTrajectoryPoints ? '隐藏轨迹点' : '显示轨迹点')
-          .width('80%')
-          .height(40)
-          .backgroundColor('#ff5ba854') // 确认色
-          .fontColor('#ffffffff') // font_on_primary
-          .onClick(() => {
-            this.toggleTrajectoryPoints();
-          })
-          .margin({ top: 5 })
       }
       .width('100%')
       .height('100%')
       .backgroundColor('#ff191a1c') // background_secondary
     }
     .title(this.pageTitle) // 动态标题
+    .menus([this.toolTmp])
     .onBackPressed(() => {
       this.index.pop() // 弹出路由栈栈顶元素
       return true

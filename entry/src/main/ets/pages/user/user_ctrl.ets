@@ -22,26 +22,25 @@ export struct login {
 
       setTimeout(() => {
         this.dialogControllerProgress.close()
-        if (response.success === true) {
           this.promptAction.showToast({
-            message: '登录成功'
+            message: response.message
           });
           this.token = response.data.token
-          this.callsign = response.data.user.callsign
+          this.callsign = response.data.callsign
           console.log("获取到的呼号：" + this.callsign)
           this.index.pop()
-        }
       }, 500);
 
     } catch (error) {
       setTimeout(() => {
         this.dialogControllerProgress.close()
-      }, 500);
-      if (error === 401) {
         this.promptAction.showToast({
-          message: '登录失败，呼号或密码错误'
+          message: error
         });
-      }
+
+      }, 500);
+
+
     }
   }
 
@@ -128,25 +127,21 @@ export struct register {
 
       setTimeout(() => {
         this.dialogControllerProgress.close()
-        if (response.success === true) {
           this.promptAction.showToast({
-            message: '注册成功'
+            message: response.message
           });
           this.token = response.data.token
           this.index.clear();
-        }
       }, 500);
 
     } catch (error) {
       setTimeout(() => {
         this.dialogControllerProgress.close()
+        this.promptAction.showToast({
+          message: error
+        });
       }, 500);
 
-      if (error === 400 || error === 409) {
-        this.promptAction.showToast({
-          message: '注册失败，呼号或邮箱已经存在'
-        });
-      }
     }
   }
 

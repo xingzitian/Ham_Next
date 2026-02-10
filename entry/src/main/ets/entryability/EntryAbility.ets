@@ -64,30 +64,36 @@ export default class EntryAbility extends UIAbility {
 
   private async fetchSatelliteList(){
     try{
-      const res_trans=await SatelliteService.get_transmitters();
-      const res_sat = await SatelliteService.getSatelliteList();
-      if (res_sat.success) {
-        await satellite_db_control.db_put(this.context,res_sat.data)
-          .then(()=>{
-            console.log("DB-卫星数据下载初始化")
-            return satellite_db_control.db_get_count(this.context)
-          })
-          .then((total_satellite)=>{
-            AppStorage.setOrCreate('total_satellite',total_satellite);
-          })
-      }
-      if (res_trans.success) {
-        await satellite_db_control.db_put_transmitters(this.context,res_trans.data)
-          .then(()=>{
-            console.log("DB-收发器数据下载初始化")
-            return satellite_db_control.db_get_transmitters_count(this.context)
-          })
-          .then((total_trans)=>{
-            AppStorage.setOrCreate('total_trans',total_trans);
-          })
-      }
+      // 1. 并行下载数据（同时发起两个请求）
+      console.log("开始下载卫星和收发器数据...");
+      const results = await Promise.all([
+        SatelliteService.get_transmitters(),
+        SatelliteService.getSatelliteList()
+      ]);
+
+      // 2. 分别获取结果
+      const res_trans = results[0];
+      const res_sat = results[1];
+
+      // 3. 先存储卫星数据
+      console.log("存储卫星数据...");
+      await satellite_db_control.db_put(this.context, res_sat.data);
+
+      // 4. 获取并更新卫星数量
+      const total_satellite = await satellite_db_control.db_get_count(this.context);
+      AppStorage.setOrCreate('total_satellite', total_satellite);
+      console.log("卫星数据下载完成，总数:", total_satellite);
+
+      // 5. 存储收发器数据
+      console.log("存储收发器数据...");
+      await satellite_db_control.db_put_transmitters(this.context, res_trans.data);
+
+      // 6. 获取并更新收发器数量
+      const total_trans = await satellite_db_control.db_get_transmitters_count(this.context);
+      AppStorage.setOrCreate('total_trans', total_trans);
+      console.log("收发器数据下载完成，总数:", total_trans);
     }catch (error){
-      console.log(error)
+      console.error("数据下载失败:", error);
     }
   }
 }

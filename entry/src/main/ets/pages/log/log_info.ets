@@ -13,19 +13,16 @@ export struct log_info {
   @State log_info: res_once_log = {
     success: true,
     message: '',
+    code: 0,
     data: {
       id: 0,
       contactCallsign: '',
-      timestamp: '',
+      date: '',
       frequency: 0,
       mode: '',
       sentReport: '',
       receivedReport: '',
-      notes: '',
-      user_id: 0,
-      createdAt: '',
-      updatedAt: '',
-
+      description: '',
     }
   }
 
@@ -38,8 +35,6 @@ export struct log_info {
       const response: res_once_log = await http_once_logs.httpRequest(log_id, token);
       console.log("http_once_logs" + response.message)
       this.log_info = response
-
-
       // this.petalMapWant.parameters = {
       //   linkSource: 'com.dada.xingzitian',
       //   destinationLatitude: this.latitude,
@@ -63,7 +58,7 @@ export struct log_info {
         Column() {
           Text('日志时间(UTC时间)：')
             .fontSize(20)
-          Text(this.log_info.data.timestamp)
+          Text(this.log_info.data.date)
             .fontSize(20)
         }
         .borderRadius(15)
@@ -98,7 +93,7 @@ export struct log_info {
         Column() {
           Text('备注：')
             .fontSize(20)
-          Text(this.log_info.data.notes)
+          Text(this.log_info.data.description)
             .fontSize(20)
         }
         .borderRadius(15)

@@ -8,34 +8,36 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 //2.reject是返回失败的方法
 //3.初始状态是pending，等待中，进行异步的操作
 
-let url_main: string = 'http://cq.huwenxin.top:12302/api/';
+let url_main: string = 'http://10.12.8.7:8080';
 let HttpRequestOptions: http.HttpRequestOptions = {};
 let mode_url = '';
 
 //对于用户注册和登录的时候返回的格式
-interface res_user {
+interface user {
   success: boolean,
   message: string,
+  code: number,
   data: data_user,
 }
 
 interface data_user {
-  user: user_data,
-  token: string
+  id: number,
+  token: string,
+  callsign: string,
+  email: string
 }
 
-//这个是用户注册登录返回的data具体内容
-interface user_data {
-  id: number,
-  callsign: string,
-  email: string,
-
+interface res_add_log {
+  success: boolean,
+  message: string,
+  code: number,
+  data: string,
 }
 
 //发送日志记录的时候的模板
 interface tx_log {
   contactCallsign: string,
-  timestamp: string, // ISO 8601 格式的日期字符串
+  timestamp: string,
   frequency: number,
   mode: string,
   sentReport: string,
@@ -43,70 +45,37 @@ interface tx_log {
   notes: string // 可选字段
 }
 
-//接受日志记录的时候的模板
+interface res_log_list {
+  success: boolean,
+  message: string,
+  code: number,
+  data: rx_log[],
+}
+
 interface rx_log {
   id: number,
   contactCallsign: string,
-  timestamp: string,
+  date: string,
   frequency: number,
   mode: string,
   sentReport: string,
   receivedReport: string,
-  notes: string,
-  user_id: number,
-  createdAt: string,
-  updatedAt: string
+  description: string,
 }
 
-//这个是用获取日志返回结构体
-
-//这个是添加log的响应
-interface res_add_log {
-  success: boolean,
-  message: string,
-  data: rx_log
-}
-
-//这个是用获取日志列表返回的分页信息
-interface pagination {
-  currentPage: number,
-  totalPages: number,
-  totalCount: number,
-  hasNext: boolean,
-  hasPrev: boolean
-}
-
-//这个是返回日志列表的data内容
-interface log_list {
-  logs: rx_log[],
-  pagination: pagination
-}
-
-
-//这个是用获取日志列表结构
-interface res_log_list {
-  success: boolean,
-  message: string,
-  data: log_list
-}
 
 interface res_once_log {
   success: boolean,
   message: string,
+  code: number,
   data: rx_log
 }
 
-//通用的返回格式
-interface message {
-  success: boolean,
-  message: string
-}
-
 class http_id {
-  static async httpRequest(mode: number, password: string, callsign: string, email?: string): Promise<res_user> {
+  static async httpRequest(mode: number, password: string, callsign: string, email?: string): Promise<user> {
     if (mode === 1) {
       //注册
-      mode_url = 'users/register'
+      mode_url = '/user/register'
       HttpRequestOptions = {
         method: http.RequestMethod.POST,
         header: { 'Content-Type': 'application/json' },
@@ -118,7 +87,7 @@ class http_id {
       }
     } else if (mode === 2) {
       //进行登录
-      mode_url = 'users/login'
+      mode_url = '/user/login'
       HttpRequestOptions = {
         method: http.RequestMethod.POST,
         header: { 'Content-Type': 'application/json' },
@@ -135,18 +104,14 @@ class http_id {
         HttpRequestOptions,
         (err: BusinessError, data: http.HttpResponse) => {
           if (!err) {
-            if (data.responseCode === 409 || data.responseCode === 401 || data.responseCode === 400) {
-              reject(data.responseCode)
-              hilog.error(0x0001, "http_login", "http_login:%{public}i", data.responseCode);
-            }
-            if (data.responseCode === 200 || data.responseCode === 201) {
-              const res: res_user = JSON.parse(data.result + '');
-              hilog.info(0x0001, "http_login", "http_login:%{public}i", data.responseCode);
-              resolve(res);
-            } else {
-              reject("error:出现未知错误")
-              hilog.error(0x0001, "http_login：", "出现未知错误");
-            }
+              const res: user= JSON.parse(data.result + '');
+              hilog.info(0x0001, "http_login", "http_login:%{public}i", res.code);
+              if(res.success===true){
+                resolve(res);
+              }else{
+                reject(res.message);
+              }
+
             // 当该请求使用完毕时，开发者务必调用 destroy 方法主动销毁该 JavaScript Object。
             httpRequest.destroy();
 
@@ -165,7 +130,7 @@ class http_id {
 class http_log_add {
   static async httpRequest(tx: tx_log, token: string): Promise<res_add_log> {
     //创建队伍
-    mode_url = 'logs'
+    mode_url = '/log/add'
     HttpRequestOptions = {
       method: http.RequestMethod.POST,
       header: {
@@ -174,12 +139,12 @@ class http_log_add {
       },
       extraData: {
         "contactCallsign": tx.contactCallsign,
-        "timestamp": tx.timestamp, // ISO 8601 格式的日期字符串
+        "date": tx.timestamp,
         "frequency": tx.frequency,
         "mode": tx.mode,
         "sentReport": tx.sentReport,
         "receivedReport": tx.receivedReport,
-        "notes": tx.notes // 可选字段
+        "description": tx.notes // 可选字段
 
       }
     }
@@ -191,17 +156,15 @@ class http_log_add {
         HttpRequestOptions,
         (err: BusinessError, data: http.HttpResponse) => {
           if (!err) {
-            console.log(data.result as string)
-            if (data.responseCode !== 201) {
-              hilog.error(0x0001, "http_add_log", "log_interface_httpcode:%{public}i", data.responseCode);
-              reject(data.responseCode)
+            console.log('http_add_log：' + data.result);
+            const res: res_add_log = JSON.parse(data.result + '');
+            hilog.info(0x0001, "http_add_log", "log_interface_httpcode:%{public}i", res.code);
+            if(res.success===true){
+              resolve(res);
+            }else{
+              reject(res.message);
             }
-            if (data.responseCode === 201) {
-              hilog.info(0x0001, "http_add_log", "log_interface_httpcode:%{public}i", data.responseCode);
-              console.log('http_add_log：' + data.result);
-              const responseObj: res_add_log = JSON.parse(data.result + '');
-              resolve(responseObj);
-            }
+
             httpRequest.destroy();
           } else {
             console.info('error:' + JSON.stringify(err));
@@ -217,19 +180,23 @@ class http_log_add {
 
 class http_list_logs {
   //这个都是查询或者添加相关的路由
-  static async httpRequest(use: number, page: number, token: string, extar: string): Promise<res_log_list> {
+  static async httpRequest( token: string,page?: number, reateDate?:string,mode?:string,minFrequency?:string,maxFrequency?:string,callsign?:string): Promise<res_log_list> {
     //获取日志列表
-    if (use === 0) {
-      mode_url = 'logs?page=1&limit=5'
-    } else {
-      mode_url = 'logs?limit=5&page=' + page + extar
-    }
+    mode_url = '/log/select'
     HttpRequestOptions = {
-      method: http.RequestMethod.GET,
+      method: http.RequestMethod.POST,
       header: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + token
-      }
+      },
+      extraData:{
+        "createDate":reateDate,
+        "mode":mode,
+        "minFrequency":minFrequency,
+        "maxFrequency":maxFrequency,
+        "callsign":callsign,
+        "pageNum":page
+    }
     }
 
     return new Promise((resolve, reject) => {
@@ -239,16 +206,14 @@ class http_list_logs {
         HttpRequestOptions,
         (err: BusinessError, data: http.HttpResponse) => {
           if (!err) {
+            const res: res_log_list = JSON.parse(data.result + '');
             console.log(data.result as string)
-            if (data.responseCode !== 200) {
-              hilog.error(0x0001, "http_list_logs", "http_list_logs:%{public}i", data.responseCode);
-              reject(data.responseCode)
-            }
-            if (data.responseCode === 200) {
-              hilog.info(0x0001, "http_list_logs", "http_list_logs:%{public}i", data.responseCode);
-              console.log('http_list_logs：' + data.result);
-              const responseObj: res_log_list = JSON.parse(data.result + '');
-              resolve(responseObj);
+            hilog.info(0x0001, "http_list_logs", "http_list_logs:%{public}i",res.code);
+            console.log('http_list_logs：' + data.result);
+            if(res.success===true){
+              resolve(res);
+            }else{
+              reject(res.message);
             }
             httpRequest.destroy();
           } else {
@@ -267,14 +232,18 @@ class http_once_logs {
   //这个都是查询或者添加相关的路由
   static async httpRequest(log_id: string, token: string): Promise<res_once_log> {
     //获取日志列表
-    mode_url = 'logs/' + log_id
+    mode_url = "/log/get_info"
     HttpRequestOptions = {
-      method: http.RequestMethod.GET,
+      method: http.RequestMethod.POST,
       header: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + token
       },
+      extraData:{
+        id:log_id
+      },
     }
+
 
     return new Promise((resolve, reject) => {
       let httpRequest = http.createHttp();
@@ -284,19 +253,16 @@ class http_once_logs {
         (err: BusinessError, data: http.HttpResponse) => {
           if (!err) {
             // data.header 为 HTTP 响应头，可根据业务需要进行解析
-
             console.log(data.result as string)
-            const responseObj: res_once_log = JSON.parse(data.result + '');
-            if (data.responseCode !== 200) {
-              hilog.error(0x0001, "http_once_logs", "http_once_logs:%{public}i", data.responseCode);
-              reject(responseObj.message)
+            const res: res_once_log = JSON.parse(data.result + '');
+            hilog.info(0x0001, "http_once_logs", "http_once_logs:%{public}i",res.message);
+            console.log('http_once_logs：' + data.result);
+            if(res.success===true){
+              resolve(res);
+            }else{
+              reject(res.message);
             }
-            if (data.responseCode === 200) {
-              hilog.info(0x0001, "http_once_logs", "http_once_logs:%{public}i", data.responseCode);
-              console.log('http_once_logs：' + data.result);
-              const responseObj: res_once_log = JSON.parse(data.result + '');
-              resolve(responseObj);
-            }
+
             httpRequest.destroy();
           } else {
             console.info('error:' + JSON.stringify(err));
@@ -312,8 +278,6 @@ class http_once_logs {
 
 
 export {
-  res_user,
-  user_data,
   tx_log,
   rx_log,
   res_add_log,

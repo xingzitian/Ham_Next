@@ -24,10 +24,8 @@ export struct add_log {
   private fruits: TextCascadePickerRangeContent[] = [
     {
       text: '语音模式',
-      children: [{ text: 'SSB' }, { text: 'FM' }, { text: 'AM' }, { text: 'FSK' }]
-    }, {
-    text: 'CW'
-  }, {
+      children: [{ text: 'SSB' }, { text: 'CW' },  { text: 'FM' }, { text: 'AM' }, { text: 'FSK' }]
+    },  {
     text: '数字模式',
     children: [{ text: 'FT8' }, { text: 'RTTY' }, { text: 'APRS' }]
   },
@@ -54,7 +52,7 @@ export struct add_log {
     try {
       const tx_log: tx_log = {
         contactCallsign: this.contactCallsign,
-        timestamp: this.timestamp, // ISO 8601 格式的日期字符串
+        timestamp: this.timestamp,
         frequency: this.frequency,
         mode: this.mode,
         sentReport: this.sentReport,
@@ -67,22 +65,19 @@ export struct add_log {
       setTimeout(() => {
         this.dialogControllerProgress.close()
       }, 500);
-      if (response.success === true) {
         this.promptAction.showToast({
-          message: '提交成功'
+          message: response.message
         });
         this.index.pop()
-      }
+
 
     } catch (error) {
       setTimeout(() => {
         this.dialogControllerProgress.close()
-      }, 500);
-      if (error === 400) {
         this.promptAction.showToast({
-          message: '参数提交不完整，请重新提交'
+          message: error
         });
-      }
+      }, 500);
     }
   }
 
@@ -100,14 +95,27 @@ export struct add_log {
                 showTime: true,
                 useMilitaryTime: true,
                 onDateAccept: (date: Date) => {
-                  const year = date.getFullYear();
-                  const month = ("0" + (date.getMonth() + 1)).slice(-2); // 月份从0开始，需要加1并补0
-                  const day = ("0" + date.getDate()).slice(-2); // 日期补0
-                  console.log("获取的时间：" + year + "-" + month + "-" + day)
-                  console.log("获取的时间1：" + date.getTime())
-                  console.log("获取的时间2：" + date.toISOString())
-                  console.log("获取的时间3：" + date.toUTCString())
-                  this.timestamp = date.toISOString()
+                  // 核心：使用Intl.DateTimeFormat格式化东八区（北京时间），解决时区偏移问题
+                  // 配置格式化参数：指定时区、年/月/日/时/分/秒的格式（2位补0）
+                  const formatter = new Intl.DateTimeFormat('zh-CN', {
+                    timeZone: 'Asia/Shanghai', // 强制指定东八区（北京时间）
+                    year: 'numeric', // 4位年份
+                    month: '2-digit', // 2位月份（补0）
+                    day: '2-digit', // 2位日期（补0）
+                    hour: '2-digit', // 2位小时（24小时制，补0）
+                    minute: '2-digit', // 2位分钟（补0）
+                    second: '2-digit', // 2位秒数（补0）
+                    hour12: false // 禁用12小时制，确保是24小时制（关键）
+                  });
+
+                  // 格式化日期为数组（[年, 月, 日, 时, 分, 秒]），便于拼接
+                  const formattedParts = formatter.format(date);
+                  // 日志打印验证
+                  console.log("原始Date对象：", date);
+
+                  // // 赋值给变量，用于传给后端
+                  this.timestamp = formattedParts
+                  console.log("最终传给后端的时间：", this.timestamp);
 
                 },
               });

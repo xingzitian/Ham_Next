@@ -107,8 +107,7 @@ export struct MorseCodeConverter {
   private pcmDataOffset: number = 0;
   private isPlaybackComplete: boolean = false;
   private allDataProvided: boolean = false;
-  // 添加音频缓冲区大小常量
-  private readonly BUFFER_SIZE: number = 4096; // 4KB缓冲区
+
 
   async init_camera() {
     try {
